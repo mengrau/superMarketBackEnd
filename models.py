@@ -1,0 +1,417 @@
+# schemas.py
+from __future__ import annotations
+from typing import Optional, List
+from uuid import UUID
+from datetime import datetime, timezone
+from decimal import Decimal
+from pydantic import BaseModel, Field
+
+
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+# -----------------------
+# Base reusable schemas
+# -----------------------
+class AuditBase(BaseModel):
+    fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
+    fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
+    id_usuario_creacion: Optional[UUID] = None
+    id_usuario_edicion: Optional[UUID] = None
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Usuario
+# -----------------------
+class UsuarioBase(BaseModel):
+    username: str = Field(..., max_length=50)
+    id_rol: UUID
+    estado: Optional[bool] = True
+
+
+class UsuarioCreate(UsuarioBase):
+    password: str = Field(..., min_length=6)
+
+
+class UsuarioUpdate(BaseModel):
+    username: Optional[str]
+    password: Optional[str]
+    id_rol: Optional[UUID]
+    estado: Optional[bool]
+
+
+class UsuarioRead(UsuarioBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Cliente (entidad independiente)
+# -----------------------
+class ClienteBase(BaseModel):
+    nombre: str = Field(..., max_length=120)
+    identificacion: str = Field(..., max_length=50)
+    email: Optional[str] = Field(None, max_length=120)
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=200)
+    estado: Optional[bool] = True
+
+
+class ClienteCreate(ClienteBase):
+    pass
+
+
+class ClienteUpdate(BaseModel):
+    nombre: Optional[str]
+    identificacion: Optional[str]
+    email: Optional[str]
+    telefono: Optional[str]
+    direccion: Optional[str]
+    estado: Optional[bool]
+
+
+class ClienteRead(ClienteBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Empleado (hereda solo a nivel de DB, aquí schema propio)
+# -----------------------
+class EmpleadoBase(BaseModel):
+    nombre: str = Field(..., max_length=120)
+    cedula: Optional[str] = Field(None, max_length=50)
+    telefono: Optional[str] = Field(None, max_length=20)
+    fecha_ingreso: Optional[datetime] = None
+    id_sucursal: Optional[UUID] = None
+    id_rol: Optional[UUID] = None
+    estado: Optional[bool] = True
+
+
+class EmpleadoCreate(EmpleadoBase):
+    pass
+
+
+class EmpleadoUpdate(BaseModel):
+    nombre: Optional[str]
+    cedula: Optional[str]
+    telefono: Optional[str]
+    fecha_ingreso: Optional[datetime]
+    id_sucursal: Optional[UUID]
+    id_rol: Optional[UUID]
+    estado: Optional[bool]
+
+
+class EmpleadoRead(EmpleadoBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Sucursal
+# -----------------------
+class SucursalBase(BaseModel):
+    nombre: str = Field(..., max_length=120)
+    direccion: Optional[str] = Field(None, max_length=200)
+    gerente: Optional[str] = Field(None, max_length=120)
+    telefono: Optional[str] = Field(None, max_length=20)
+    estado: Optional[bool] = True
+
+
+class SucursalCreate(SucursalBase):
+    pass
+
+
+class SucursalUpdate(BaseModel):
+    nombre: Optional[str]
+    direccion: Optional[str]
+    gerente: Optional[str]
+    telefono: Optional[str]
+    estado: Optional[bool]
+
+
+class SucursalRead(SucursalBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Proveedor
+# -----------------------
+class ProveedorBase(BaseModel):
+    nombre: str = Field(..., max_length=150)
+    nit: str = Field(..., max_length=50)
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=200)
+    correo: Optional[str] = Field(None, max_length=120)
+    estado: Optional[bool] = True
+
+
+class ProveedorCreate(ProveedorBase):
+    pass
+
+
+class ProveedorUpdate(BaseModel):
+    nombre: Optional[str]
+    nit: Optional[str]
+    telefono: Optional[str]
+    direccion: Optional[str]
+    correo: Optional[str]
+    estado: Optional[bool]
+
+
+class ProveedorRead(ProveedorBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# TipoProducto
+# -----------------------
+class TipoProductoBase(BaseModel):
+    nombre: str = Field(..., max_length=120)
+    descripcion: Optional[str] = Field(None, max_length=300)
+    estado: Optional[bool] = True
+
+
+class TipoProductoCreate(TipoProductoBase):
+    pass
+
+
+class TipoProductoUpdate(BaseModel):
+    nombre: Optional[str]
+    descripcion: Optional[str]
+    estado: Optional[bool]
+
+
+class TipoProductoRead(TipoProductoBase):
+    id: UUID
+    fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
+    fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Producto
+# -----------------------
+class ProductoBase(BaseModel):
+    nombre: str = Field(..., max_length=200)
+    codigo_barras: Optional[str] = Field(None, max_length=100)
+    precio_venta: Decimal = Field(..., gt=0)
+    fecha_vencimiento: Optional[datetime] = None
+    id_tipo: Optional[UUID] = None
+    id_proveedor: Optional[UUID] = None
+    estado: Optional[bool] = True
+
+
+class ProductoCreate(ProductoBase):
+    pass
+
+
+class ProductoUpdate(BaseModel):
+    nombre: Optional[str]
+    codigo_barras: Optional[str]
+    precio_venta: Optional[Decimal]
+    fecha_vencimiento: Optional[datetime]
+    id_tipo: Optional[UUID]
+    id_proveedor: Optional[UUID]
+    estado: Optional[bool]
+
+
+class ProductoRead(ProductoBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Inventario
+# -----------------------
+class InventarioBase(BaseModel):
+    stock_actual: int = Field(..., ge=0)
+    stock_minimo: int = Field(..., ge=0)
+    ubicacion: Optional[str] = Field(None, max_length=200)
+    id_producto: UUID
+    id_sucursal: UUID
+    estado: Optional[bool] = True
+
+
+class InventarioCreate(InventarioBase):
+    pass
+
+
+class InventarioUpdate(BaseModel):
+    stock_actual: Optional[int]
+    stock_minimo: Optional[int]
+    ubicacion: Optional[str]
+    id_producto: Optional[UUID]
+    id_sucursal: Optional[UUID]
+    estado: Optional[bool]
+
+
+class InventarioRead(InventarioBase, AuditBase):
+    id: UUID
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Factura y DetalleFactura
+# -----------------------
+class DetalleFacturaBase(BaseModel):
+    cantidad: int = Field(..., gt=0)
+    precio_unitario: Decimal = Field(..., gt=0)
+    subtotal: Decimal = Field(..., gt=0)
+    id_factura: UUID
+    id_producto: UUID
+
+
+class DetalleFacturaCreate(BaseModel):
+    cantidad: int = Field(..., gt=0)
+    precio_unitario: Decimal = Field(..., gt=0)
+    id_producto: UUID
+
+
+class DetalleFacturaUpdate(BaseModel):
+    cantidad: Optional[int]
+    precio_unitario: Optional[Decimal]
+
+
+class DetalleFacturaRead(DetalleFacturaBase):
+    id: UUID
+    fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
+
+    class Config:
+        orm_mode = True
+
+
+class FacturaBase(BaseModel):
+    fecha: Optional[datetime] = Field(default_factory=now_utc)
+    total: Decimal = Field(..., ge=0)
+    metodo_pago: Optional[str] = Field(None, max_length=80)
+    id_cliente: UUID
+    id_empleado: UUID
+    id_sucursal: UUID
+    estado: Optional[str] = Field(default="emitida", max_length=30)
+
+
+class FacturaCreate(BaseModel):
+    metodo_pago: Optional[str]
+    id_cliente: UUID
+    id_empleado: UUID
+    id_sucursal: UUID
+    detalles: List[DetalleFacturaCreate] = []
+
+
+class FacturaUpdate(BaseModel):
+    metodo_pago: Optional[str]
+    estado: Optional[str]
+
+
+class FacturaRead(FacturaBase, AuditBase):
+    id: UUID
+    detalles: List[DetalleFacturaRead] = []
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# CompraProveedor y DetalleCompra
+# -----------------------
+class DetalleCompraBase(BaseModel):
+    cantidad: int = Field(..., gt=0)
+    precio_compra: Decimal = Field(..., gt=0)
+    id_compra: UUID
+    id_producto: UUID
+
+
+class DetalleCompraCreate(BaseModel):
+    cantidad: int = Field(..., gt=0)
+    precio_compra: Decimal = Field(..., gt=0)
+    id_producto: UUID
+
+
+class DetalleCompraUpdate(BaseModel):
+    cantidad: Optional[int]
+    precio_compra: Optional[Decimal]
+
+
+class DetalleCompraRead(DetalleCompraBase):
+    id: UUID
+    fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
+
+    class Config:
+        orm_mode = True
+
+
+class CompraProveedorBase(BaseModel):
+    fecha: Optional[datetime] = Field(default_factory=now_utc)
+    total_compra: Decimal = Field(..., ge=0)
+    id_proveedor: UUID
+    estado: Optional[str] = Field(default="recibida", max_length=30)
+
+
+class CompraProveedorCreate(BaseModel):
+    id_proveedor: UUID
+    detalles: List[DetalleCompraCreate] = []
+
+
+class CompraProveedorUpdate(BaseModel):
+    estado: Optional[str]
+
+
+class CompraProveedorRead(CompraProveedorBase, AuditBase):
+    id: UUID
+    detalles: List[DetalleCompraRead] = []
+
+    class Config:
+        orm_mode = True
+
+
+# -----------------------
+# Rol
+# -----------------------
+class RolBase(BaseModel):
+    nombre: str = Field(..., max_length=80)
+    descripcion: Optional[str] = Field(None, max_length=250)
+    salario_base: Optional[Decimal] = None
+    activo: Optional[bool] = True
+
+
+class RolCreate(RolBase):
+    pass
+
+
+class RolUpdate(BaseModel):
+    nombre: Optional[str]
+    descripcion: Optional[str]
+    salario_base: Optional[Decimal]
+    activo: Optional[bool]
+
+
+class RolRead(RolBase):
+    id: UUID
+    fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
+    fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
+
+    class Config:
+        orm_mode = True
