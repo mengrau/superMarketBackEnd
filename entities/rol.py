@@ -1,0 +1,32 @@
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import Column, String, DateTime, Numeric, Boolean
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from database.config import Base
+
+
+class Rol(Base):
+    __tablename__ = "roles"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+
+    nombre = Column(String(80), nullable=False, unique=True)
+    descripcion = Column(String(250))
+    salario = Column(Numeric(12, 2), nullable=True)
+
+    activo = Column(Boolean, default=True)
+
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    fecha_actualizacion = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    usuarios = relationship("Usuario", back_populates="roles")
+
+    def __repr__(self):
+        return f"<Rol {self.nombre}>"
