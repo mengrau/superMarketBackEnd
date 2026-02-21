@@ -1,0 +1,22 @@
+# Core ORM and Database
+SQLAlchemy==2.0.23
+alembic==1.12.1
+
+# Database Driver (PostgreSQL)
+psycopg2-binary==2.9.11  
+
+# Data Validation and Serialization
+pydantic==2.9.2
+pydantic-settings==2.3.0
+email-validator==2.1.0
+
+# Additional Utilities
+python-dotenv==1.0.0     # Environment variables
+typing-extensions==4.12.2  # Type hints support
+passlib[bcrypt]==1.7.4   # Hashing passwords
+
+#Apis utilities
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
