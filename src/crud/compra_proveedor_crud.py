@@ -1,0 +1,209 @@
+"""
+Operaciones CRUD para las entidades CompraProveedor y DetalleCompra.
+"""
+
+from decimal import Decimal
+from typing import List, Optional
+from uuid import UUID
+
+from sqlalchemy.orm import Session
+
+from entities.compraProveedor import CompraProveedor
+from entities.detalleCompra import DetalleCompra
+from entities.proveedor import Proveedor
+from entities.producto import Producto
+
+ESTADOS_COMPRA = {"pedida", "recibida", "anulada"}
+
+class CompraProveedorCRUD:
+    """Operaciones CRUD para ComprasProveedor y sus detalles."""
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def crear_compra(
+        self,
+        id_proveedor: UUID,
+        total_compra: Decimal = Decimal("0"),
+        estado: str = "recibida",
+        id_usuario_creacion: Optional[UUID] = None,
+    ) -> CompraProveedor:
+        """
+        Registra una nueva compra a proveedor.
+
+        Args:
+            id_proveedor: UUID del proveedor.
+            total_compra: Total de la compra (por defecto 0, se recalcula al agregar detalles).
+            estado: Estado inicial ('pedida', 'recibida', 'anulada').
+            id_usuario_creacion: UUID del usuario que crea el registro.
+
+        Returns:
+            Instancia creada de CompraProveedor.
+
+        Raises:
+            ValueError: Si el proveedor no existe o el estado es inválido.
+        """
+        if estado not in ESTADOS_COMPRA:
+            raise ValueError(f"Estado inválido. Opciones: {ESTADOS_COMPRA}")
+        if self.db.get(Proveedor, id_proveedor) is None:
+            raise ValueError("El proveedor especificado no existe")
+
+        compra = CompraProveedor(
+            id_proveedor=id_proveedor,
+            total_compra=total_compra,
+            estado=estado,
+            id_usuario_creacion=id_usuario_creacion,
+        )
+        self.db.add(compra)
+        self.db.commit()
+        self.db.refresh(compra)
+        return compra
+
+    def obtener_compra(self, compra_id: UUID) -> Optional[CompraProveedor]:
+        """Obtiene una compra por su UUID."""
+        return self.db.get(CompraProveedor, compra_id)
+
+    def obtener_compras(self, skip: int = 0, limit: int = 100) -> List[CompraProveedor]:
+        """Lista todas las compras a proveedores con paginación."""
+        return self.db.query(CompraProveedor).offset(skip).limit(limit).all()
+
+    def obtener_compras_por_proveedor(
+        self, id_proveedor: UUID, skip: int = 0, limit: int = 100
+    ) -> List[CompraProveedor]:
+        """Lista las compras realizadas a un proveedor específico."""
+        return (
+            self.db.query(CompraProveedor)
+            .filter(CompraProveedor.id_proveedor == id_proveedor)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
+    def actualizar_compra(
+        self, compra_id: UUID, id_usuario_edicion: Optional[UUID] = None, **kwargs
+    ) -> Optional[CompraProveedor]:
+        """
+        Actualiza una compra a proveedor.
+        Campos soportados: total_compra, estado.
+
+        Args:
+            compra_id: UUID de la compra.
+            id_usuario_edicion: UUID del usuario que edita.
+            **kwargs: Campos a actualizar.
+
+        Returns:
+            Instancia actualizada o None si no existe.
+
+        Raises:
+            ValueError: Si el estado no es válido.
+        """
+        compra = self.obtener_compra(compra_id)
+        if not compra:
+            return None
+
+        if "estado" in kwargs and kwargs["estado"] not in ESTADOS_COMPRA:
+            raise ValueError(f"Estado inválido. Opciones: {ESTADOS_COMPRA}")
+
+        if id_usuario_edicion:
+            kwargs["id_usuario_edicion"] = id_usuario_edicion
+
+        for key, value in kwargs.items():
+            if hasattr(compra, key):
+                setattr(compra, key, value)
+
+        self.db.commit()
+        self.db.refresh(compra)
+        return compra
+
+    def anular_compra(
+        self, compra_id: UUID, id_usuario_edicion: Optional[UUID] = None
+    ) -> Optional[CompraProveedor]:
+        """Anula una compra cambiando su estado a 'anulada'."""
+        return self.actualizar_compra(
+            compra_id, id_usuario_edicion=id_usuario_edicion, estado="anulada"
+        )
+
+    def agregar_detalle(
+        self,
+        id_compra: UUID,
+        id_producto: UUID,
+        cantidad: int,
+        precio_compra: Decimal,
+    ) -> DetalleCompra:
+        """
+        Agrega un ítem a una compra y recalcula el total.
+
+        Args:
+            id_compra: UUID de la compra destino.
+            id_producto: UUID del producto comprado.
+            cantidad: Unidades compradas (debe ser >= 1).
+            precio_compra: Precio de compra por unidad.
+
+        Returns:
+            Instancia creada de DetalleCompra.
+
+        Raises:
+            ValueError: Si la compra o el producto no existen, o los valores son inválidos.
+        """
+        if cantidad < 1:
+            raise ValueError("La cantidad debe ser mayor a 0")
+        if Decimal(str(precio_compra)) <= 0:
+            raise ValueError("El precio de compra debe ser mayor a 0")
+        if self.obtener_compra(id_compra) is None:
+            raise ValueError("La compra especificada no existe")
+        if self.db.get(Producto, id_producto) is None:
+            raise ValueError("El producto especificado no existe")
+
+        detalle = DetalleCompra(
+            id_compra=id_compra,
+            id_producto=id_producto,
+            cantidad=cantidad,
+            precio_compra=precio_compra,
+        )
+        self.db.add(detalle)
+
+        compra = self.obtener_compra(id_compra)
+        subtotal = Decimal(str(precio_compra)) * cantidad
+        compra.total_compra = Decimal(str(compra.total_compra or 0)) + subtotal
+
+        self.db.commit()
+        self.db.refresh(detalle)
+        return detalle
+
+    def obtener_detalle(self, detalle_id: UUID) -> Optional[DetalleCompra]:
+        """Obtiene un detalle de compra por su UUID."""
+        return self.db.get(DetalleCompra, detalle_id)
+
+    def obtener_detalles_por_compra(self, id_compra: UUID) -> List[DetalleCompra]:
+        """Lista todos los detalles de una compra."""
+        return (
+            self.db.query(DetalleCompra)
+            .filter(DetalleCompra.id_compra == id_compra)
+            .all()
+        )
+
+    def eliminar_detalle(self, detalle_id: UUID) -> bool:
+        """
+        Elimina un detalle de compra y descuenta su valor del total de la compra.
+
+        Args:
+            detalle_id: UUID del detalle.
+
+        Returns:
+            True si se eliminó, False si no existe.
+        """
+        detalle = self.obtener_detalle(detalle_id)
+        if not detalle:
+            return False
+
+        compra = self.obtener_compra(detalle.id_compra)
+        if compra:
+            subtotal = Decimal(str(detalle.precio_compra or 0)) * detalle.cantidad
+            compra.total_compra = max(
+                Decimal("0"),
+                Decimal(str(compra.total_compra or 0)) - subtotal,
+            )
+
+        self.db.delete(detalle)
+        self.db.commit()
+        return True
