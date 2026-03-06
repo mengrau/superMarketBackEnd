@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 from uuid import UUID
-from src.models import ClienteBase
-from src.schemas.cliente import ClienteCreate, ClienteUpdate
+from entities.cliente import Cliente
+from models import ClienteCreate, ClienteUpdate
 
 
 def crear_cliente(db: Session, cliente_data: ClienteCreate):
-    cliente = ClienteBase(**cliente_data.model_dump())
+    cliente = Cliente(**cliente_data.model_dump())
     db.add(cliente)
     db.commit()
     db.refresh(cliente)
@@ -13,15 +13,15 @@ def crear_cliente(db: Session, cliente_data: ClienteCreate):
 
 
 def obtener_cliente(db: Session, cliente_id: UUID):
-    return db.query(ClienteBase).filter(ClienteBase.id == cliente_id).first()
+    return db.query(Cliente).filter(Cliente.id == cliente_id).first()
 
 
 def listar_clientes(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(ClienteBase).offset(skip).limit(limit).all()
+    return db.query(Cliente).offset(skip).limit(limit).all()
 
 
 def actualizar_cliente(db: Session, cliente_id: UUID, cliente_data: ClienteUpdate):
-    cliente = db.query(ClienteBase).filter(ClienteBase.id == cliente_id).first()
+    cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         return None
 
@@ -34,7 +34,7 @@ def actualizar_cliente(db: Session, cliente_id: UUID, cliente_data: ClienteUpdat
 
 
 def eliminar_cliente(db: Session, cliente_id: UUID):
-    cliente = db.query(ClienteBase).filter(ClienteBase.id == cliente_id).first()
+    cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         return None
 

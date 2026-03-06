@@ -3,13 +3,13 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
 
-from src.database.config import get_db
-from src.schemas.cliente import (
+from database.config import get_db
+from schemas.cliente import (
     ClienteCreate,
     ClienteUpdate,
     ClienteResponse,
 )
-from src.services.clienteService import (
+from services.clienteService import (
     crear_cliente,
     obtener_cliente,
     listar_clientes,
