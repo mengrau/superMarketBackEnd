@@ -11,7 +11,7 @@ class Usuario(Base):
     __tablename__ = "usuarios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(50), nullable=False)
     password_hash = Column(String(255), nullable=False)
 
     id_rol = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=False)

@@ -12,7 +12,7 @@ class Proveedor(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     nombre = Column(String(150), nullable=False)
-    nit = Column(String(50), unique=True, nullable=False)
+    nit = Column(String(50), nullable=False)
     telefono = Column(String(20))
     direccion = Column(String(200))
     correo = Column(String(120))

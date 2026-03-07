@@ -12,7 +12,7 @@ class Producto(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     nombre = Column(String(200), nullable=False)
-    codigo_barras = Column(String(100), unique=True, nullable=True)
+    codigo_barras = Column(String(100), nullable=True)
     precio_venta = Column(Numeric(12, 2), nullable=False)
     fecha_vencimiento = Column(DateTime, nullable=True)
 

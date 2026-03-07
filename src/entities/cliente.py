@@ -14,7 +14,7 @@ class Cliente(Base):
     # datos cliente
     nombre = Column(String(120), nullable=False)
     tipo_identificacion = Column(String(5), unique=False, nullable=False)
-    identificacion = Column(String(50), unique=True, nullable=False)
+    identificacion = Column(String(50), nullable=False)
     email = Column(String(120))
     telefono = Column(String(20))
     direccion = Column(String(200))
@@ -25,12 +25,14 @@ class Cliente(Base):
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
 
-    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     fecha_actualizacion = Column(
-    DateTime,
-    default=lambda: datetime.now(timezone.utc),
-    onupdate=lambda: datetime.now(timezone.utc)
-)
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
     # relaciones auditoria
     usuario_creador = relationship("Usuario", foreign_keys=[id_usuario_creacion])
