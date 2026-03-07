@@ -21,7 +21,7 @@ class AuditBase(BaseModel):
     id_usuario_edicion: Optional[UUID] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -48,7 +48,7 @@ class UsuarioRead(UsuarioBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -80,7 +80,7 @@ class ClienteRead(ClienteBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -114,7 +114,7 @@ class EmpleadoRead(EmpleadoBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -144,7 +144,7 @@ class SucursalRead(SucursalBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -176,7 +176,7 @@ class ProveedorRead(ProveedorBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -204,7 +204,7 @@ class TipoProductoRead(TipoProductoBase):
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -238,7 +238,7 @@ class ProductoRead(ProductoBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -270,7 +270,7 @@ class InventarioRead(InventarioBase, AuditBase):
     id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -300,7 +300,7 @@ class DetalleFacturaRead(DetalleFacturaBase):
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class FacturaBase(BaseModel):
@@ -331,7 +331,7 @@ class FacturaRead(FacturaBase, AuditBase):
     detalles: List[DetalleFacturaRead] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -360,7 +360,7 @@ class DetalleCompraRead(DetalleCompraBase):
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CompraProveedorBase(BaseModel):
@@ -384,7 +384,7 @@ class CompraProveedorRead(CompraProveedorBase, AuditBase):
     detalles: List[DetalleCompraRead] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # -----------------------
@@ -414,4 +414,4 @@ class RolRead(RolBase):
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
 
     class Config:
-        orm_mode = True
+        from_attributes = True

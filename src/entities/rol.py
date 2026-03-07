@@ -26,7 +26,7 @@ class Rol(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    usuarios = relationship("Usuario", back_populates="roles")
+    usuarios = relationship("Usuario", back_populates="rol")
 
     def __repr__(self):
         return f"<Rol {self.nombre}>"
