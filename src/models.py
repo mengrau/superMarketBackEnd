@@ -393,7 +393,7 @@ class CompraProveedorRead(CompraProveedorBase, AuditBase):
 class RolBase(BaseModel):
     nombre: str = Field(..., max_length=80)
     descripcion: Optional[str] = Field(None, max_length=250)
-    salario_base: Optional[Decimal] = None
+    salario: Optional[Decimal] = None
     activo: Optional[bool] = True
 
 
@@ -404,7 +404,7 @@ class RolCreate(RolBase):
 class RolUpdate(BaseModel):
     nombre: Optional[str]
     descripcion: Optional[str]
-    salario_base: Optional[Decimal]
+    salario: Optional[Decimal]
     activo: Optional[bool]
 
 

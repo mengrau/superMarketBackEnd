@@ -1,5 +1,10 @@
 import uvicorn
-from api.v1 import cliente, usuario
+from api import cliente
+from api import producto
+from api import proveedor
+from api import sucursal
+from api import tipo_producto
+from api import usuario
 from database.config import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,8 +28,16 @@ app.add_middleware(
 )
 
 # app.include_router(auth_router)  # Descomenta si tienes rutas de auth
-app.include_router(cliente.router, prefix="/api/v1/clientes", tags=["Clientes"])
-app.include_router(usuario.router, prefix="/api/v1/usuarios", tags=["Usuarios"])
+app.include_router(cliente.router, prefix="/clientes", tags=["Clientes"])
+app.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
+app.include_router(proveedor.router, prefix="/proveedores", tags=["Proveedores"])
+app.include_router(producto.router, prefix="/productos", tags=["Productos"])
+app.include_router(sucursal.router, prefix="/sucursales", tags=["Sucursales"])
+app.include_router(
+    tipo_producto.router,
+    prefix="/tipos-producto",
+    tags=["Tipos de Producto"],
+)
 
 
 @app.on_event("startup")
@@ -44,8 +57,12 @@ async def root():
         "documentacion": "/docs",
         "redoc": "/redoc",
         "endpoints": {
-            "Clientes": "/api/v1/clientes",
-            "Usuarios": "/api/v1/usuarios",
+            "Clientes": "/clientes",
+            "Usuarios": "/usuarios",
+            "Proveedores": "/proveedores",
+            "Productos": "/productos",
+            "Sucursales": "/sucursales",
+            "TiposProducto": "/tipos-producto",
         },
     }
 
