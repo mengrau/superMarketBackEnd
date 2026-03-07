@@ -15,7 +15,7 @@ class Usuario(Base):
     password_hash = Column(String(255), nullable=False)
 
     id_rol = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=False)
-    rol = relationship("Rol")
+    rol = relationship("Rol", back_populates="usuarios")
     estado = Column(Boolean, default=True)
 
     # discriminador de herencia
@@ -35,8 +35,12 @@ class Usuario(Base):
     )
 
     # relaciones auditoria
-    usuario_creador = relationship("Usuario", remote_side=[id])
-    usuario_editor = relationship("Usuario", remote_side=[id])
+    usuario_creador = relationship(
+        "Usuario", foreign_keys=[id_usuario_creacion], remote_side=[id]
+    )
+    usuario_editor = relationship(
+        "Usuario", foreign_keys=[id_usuario_edicion], remote_side=[id]
+    )
 
     __mapper_args__ = {"polymorphic_identity": "usuario", "polymorphic_on": tipo}
 

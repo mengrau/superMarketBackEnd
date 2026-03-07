@@ -26,7 +26,9 @@ class Factura(Base):
     # auditoría (útil para trazabilidad de documentos fiscales)
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
-    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     fecha_actualizacion = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -34,7 +36,7 @@ class Factura(Base):
     )
 
     cliente = relationship("Cliente")
-    empleado = relationship("Empleado")
+    empleado = relationship("Empleado", foreign_keys=[id_empleado])
     sucursal = relationship("Sucursal")
     detalles = relationship(
         "DetalleFactura", back_populates="factura", cascade="all, delete-orphan"
