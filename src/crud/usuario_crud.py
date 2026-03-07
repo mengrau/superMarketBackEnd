@@ -50,7 +50,14 @@ class UsuarioCRUD:
         if not password:
             raise ValueError("La contrasena es obligatoria")
 
-        if self.obtener_usuario_por_username(username):
+        if (
+            self.db.query(Usuario)
+            .filter(
+                Usuario.username.ilike(username.strip()),
+                Usuario.estado == True,
+            )
+            .first()
+        ):
             raise ValueError("El username ya esta en uso")
 
         if self.db.get(Rol, id_rol) is None:
