@@ -10,9 +10,9 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from auth.security import hash_password, verify_password
 from entities.rol import Rol
 from entities.usuario import Usuario
+
 
 class UsuarioCRUD:
     """Operaciones CRUD y autenticacion para Usuarios."""
@@ -198,8 +198,9 @@ class UsuarioCRUD:
             if self.db.get(Rol, kwargs["id_rol"]) is None:
                 raise ValueError("El rol especificado no existe")
 
+        # Manejar cambio de contraseña si se proporciona
+        new_password = kwargs.pop("password", None)
         kwargs.pop("password_hash", None)
-        kwargs.pop("password", None)
 
         if id_usuario_edicion:
             kwargs["id_usuario_edicion"] = id_usuario_edicion
@@ -207,6 +208,9 @@ class UsuarioCRUD:
         for key, value in kwargs.items():
             if hasattr(usuario, key):
                 setattr(usuario, key, value)
+
+        if new_password:
+            usuario.set_password(new_password)
 
         self.db.commit()
         self.db.refresh(usuario)
