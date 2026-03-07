@@ -61,7 +61,9 @@ class UsuarioCRUD:
             id_rol=id_rol,
             id_usuario_creacion=id_usuario_creacion,
         )
-        usuario.set_password(password)
+        # Truncar la contraseña a 72 caracteres para evitar error de passlib/bcrypt
+        truncated_password = password[:72]
+        usuario.set_password(truncated_password)
 
         self.db.add(usuario)
         self.db.commit()

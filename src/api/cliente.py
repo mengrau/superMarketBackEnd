@@ -4,14 +4,10 @@ from uuid import UUID
 from typing import List
 
 from database.config import get_db
-from models import (
-    ClienteCreate,
-    ClienteUpdate,
-    ClienteRead,
-)
+from models import ClienteCreate, ClienteUpdate, ClienteRead
 from crud.cliente_crud import ClienteCRUD
 
-router = APIRouter(prefix="/clientes", tags=["Clientes"])
+router = APIRouter()
 
 
 @router.post("/", response_model=ClienteRead)

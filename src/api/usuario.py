@@ -1,13 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from uuid import UUID
 from database.config import get_db
-from models import (
-    UsuarioCreate,
-    UsuarioRead,
-    UsuarioUpdate,
-)
+from models import UsuarioCreate, UsuarioRead, UsuarioUpdate
 from crud.usuario_crud import UsuarioCRUD
+from entities.usuario import Usuario
 
 router = APIRouter()
 
@@ -15,12 +12,20 @@ router = APIRouter()
 @router.post("/", response_model=UsuarioRead)
 def create(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     crud = UsuarioCRUD(db)
+    total_usuarios = db.query(Usuario).count()
+    # Permitir crear el primer usuario sin id_usuario_creacion
+    id_usuario_creacion = None
+    if total_usuarios > 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Solo puedes crear el primer usuario sin id_usuario_creacion. Para los siguientes, usa el endpoint de actualización o ajusta el modelo.",
+        )
     try:
         return crud.crear_usuario(
             username=usuario.username,
             password=usuario.password,
             id_rol=usuario.id_rol,
-            id_usuario_creacion=usuario.id_usuario_creacion,
+            id_usuario_creacion=id_usuario_creacion,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
