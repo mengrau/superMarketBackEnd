@@ -21,43 +21,35 @@ depends_on = None
 def upgrade():
     # ── clientes.identificacion ───────────────────────────────────────────
     op.drop_constraint("clientes_identificacion_key", "clientes", type_="unique")
-    op.execute(
-        """
+    op.execute("""
         CREATE UNIQUE INDEX uq_clientes_identificacion_activo
         ON clientes (identificacion)
         WHERE estado = TRUE
-        """
-    )
+        """)
 
     # ── proveedores.nit ───────────────────────────────────────────────────
     op.drop_constraint("proveedores_nit_key", "proveedores", type_="unique")
-    op.execute(
-        """
+    op.execute("""
         CREATE UNIQUE INDEX uq_proveedores_nit_activo
         ON proveedores (nit)
         WHERE estado = TRUE
-        """
-    )
+        """)
 
     # ── productos.codigo_barras ───────────────────────────────────────────
     op.drop_constraint("productos_codigo_barras_key", "productos", type_="unique")
-    op.execute(
-        """
+    op.execute("""
         CREATE UNIQUE INDEX uq_productos_codigo_barras_activo
         ON productos (codigo_barras)
         WHERE estado = TRUE AND codigo_barras IS NOT NULL
-        """
-    )
+        """)
 
     # ── usuarios.username ─────────────────────────────────────────────────
     op.drop_constraint("usuarios_username_key", "usuarios", type_="unique")
-    op.execute(
-        """
+    op.execute("""
         CREATE UNIQUE INDEX uq_usuarios_username_activo
         ON usuarios (username)
         WHERE estado = TRUE
-        """
-    )
+        """)
 
 
 def downgrade():
