@@ -17,9 +17,6 @@ from crud.tipo_producto_crud import TipoProductoCRUD
 from crud.usuario_crud import UsuarioCRUD
 
 
-# ─── UTILIDADES ───────────────────────────────────────────────────────────────
-
-
 def limpiar_pantalla():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -53,16 +50,15 @@ def leer_uuid_opcional(prompt: str) -> Optional[UUID]:
 
 
 def separador(titulo: str):
+    """Imprime un encabezado de sección con el título dado."""
     linea = "═" * 44
     print(f"\n╔{linea}╗")
     print(f"║  {titulo:<42}║")
     print(f"╚{linea}╝")
 
 
-# ─── CLIENTES ─────────────────────────────────────────────────────────────────
-
-
 def menu_clientes():
+    """Submenu de gestion de clientes: listar, crear, actualizar y eliminar."""
     while True:
         separador("CLIENTES")
         print("  1. Listar clientes")
@@ -145,10 +141,8 @@ def menu_clientes():
         pausar()
 
 
-# ─── PRODUCTOS ────────────────────────────────────────────────────────────────
-
-
 def menu_productos():
+    """Submenu de gestion de productos: listar, crear, actualizar y eliminar."""
     while True:
         separador("PRODUCTOS")
         print("  1. Listar productos")
@@ -245,10 +239,8 @@ def menu_productos():
         pausar()
 
 
-# ─── PROVEEDORES ──────────────────────────────────────────────────────────────
-
-
 def menu_proveedores():
+    """Submenu de gestion de proveedores: listar, crear, actualizar y eliminar."""
     while True:
         separador("PROVEEDORES")
         print("  1. Listar proveedores")
@@ -330,10 +322,8 @@ def menu_proveedores():
         pausar()
 
 
-# ─── SUCURSALES ───────────────────────────────────────────────────────────────
-
-
 def menu_sucursales():
+    """Submenu de gestion de sucursales: listar, crear, actualizar y eliminar."""
     while True:
         separador("SUCURSALES")
         print("  1. Listar sucursales")
@@ -414,10 +404,8 @@ def menu_sucursales():
         pausar()
 
 
-# ─── TIPOS DE PRODUCTO ────────────────────────────────────────────────────────
-
-
 def menu_tipos_producto():
+    """Submenu de gestion de tipos de producto: listar, crear, actualizar y eliminar."""
     while True:
         separador("TIPOS DE PRODUCTO")
         print("  1. Listar tipos de producto")
@@ -483,10 +471,8 @@ def menu_tipos_producto():
         pausar()
 
 
-# ─── USUARIOS ─────────────────────────────────────────────────────────────────
-
-
 def menu_usuarios():
+    """Submenu de gestion de usuarios: listar, crear, actualizar, eliminar, cambiar contraseña y autenticar."""
     while True:
         separador("USUARIOS")
         print("  1. Listar usuarios")
@@ -579,8 +565,6 @@ def menu_usuarios():
 
         pausar()
 
-
-# ─── MENÚ PRINCIPAL ───────────────────────────────────────────────────────────
 
 MENU_OPCIONES = {
     "1": ("Clientes", menu_clientes),

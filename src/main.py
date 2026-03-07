@@ -1,3 +1,9 @@
+"""
+Punto de entrada de la aplicación SuperMarket.
+Registra todos los routers de FastAPI, configura CORS, crea las tablas en el
+arranque e inicia el menú de consola cuando se ejecuta directamente.
+"""
+
 import uvicorn
 from api import cliente
 from api import producto
@@ -8,8 +14,6 @@ from api import usuario
 from database.config import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# from auth.routes import router as auth_router  # Descomenta si tienes rutas de auth
 
 app = FastAPI(
     title="SuperMarket API",
@@ -27,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# app.include_router(auth_router)  # Descomenta si tienes rutas de auth
 app.include_router(cliente.router, prefix="/clientes", tags=["Clientes"])
 app.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
 app.include_router(proveedor.router, prefix="/proveedores", tags=["Proveedores"])

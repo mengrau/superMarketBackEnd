@@ -7,11 +7,15 @@ from database.config import Base
 
 
 class Cliente(Base):
+    """
+    Modelo ORM para la tabla 'clientes'.
+    Implementa soft-delete mediante la columna 'estado'.
+    """
+
     __tablename__ = "clientes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
-    # datos cliente
     nombre = Column(String(120), nullable=False)
     tipo_identificacion = Column(String(5), unique=False, nullable=False)
     identificacion = Column(String(50), nullable=False)
@@ -21,7 +25,6 @@ class Cliente(Base):
 
     estado = Column(Boolean, default=True)
 
-    # auditoria
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
 
@@ -34,7 +37,6 @@ class Cliente(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # relaciones auditoria
     usuario_creador = relationship("Usuario", foreign_keys=[id_usuario_creacion])
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 

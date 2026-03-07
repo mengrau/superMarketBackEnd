@@ -7,6 +7,12 @@ from database.config import Base
 
 
 class Factura(Base):
+    """
+    Modelo ORM para la tabla 'facturas'.
+    El campo 'estado' indica el ciclo de vida del documento: emitida, anulada o pendiente.
+    Incluye campos de auditoría para trazabilidad de documentos fiscales.
+    """
+
     __tablename__ = "facturas"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -21,9 +27,8 @@ class Factura(Base):
         UUID(as_uuid=True), ForeignKey("sucursales.id"), nullable=False
     )
 
-    estado = Column(String(30), default="emitida")  # ej: emitida, anulada, pendiente
+    estado = Column(String(30), default="emitida")
 
-    # auditoría (útil para trazabilidad de documentos fiscales)
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     fecha_creacion = Column(

@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class Producto(Base):
+    """
+    Modelo ORM para la tabla 'productos'.
+    Implementa soft-delete mediante la columna 'estado'.
+    """
+
     __tablename__ = "productos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -16,7 +21,6 @@ class Producto(Base):
     precio_venta = Column(Numeric(12, 2), nullable=False)
     fecha_vencimiento = Column(DateTime, nullable=True)
 
-    # FK
     id_tipo = Column(UUID(as_uuid=True), ForeignKey("tipo_productos.id"), nullable=True)
     id_proveedor = Column(
         UUID(as_uuid=True), ForeignKey("proveedores.id"), nullable=True
@@ -24,7 +28,6 @@ class Producto(Base):
 
     estado = Column(Boolean, default=True)
 
-    # auditoría
     fecha_creacion = Column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )

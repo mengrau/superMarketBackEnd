@@ -8,6 +8,12 @@ from auth.security import hash_password, verify_password
 
 
 class Usuario(Base):
+    """
+    Modelo ORM para la tabla 'usuarios'.
+    Soporta polimorfismo de joined-table para la entidad Empleado.
+    Incluye métodos de seguridad para manejo de contraseñas.
+    """
+
     __tablename__ = "usuarios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -18,10 +24,8 @@ class Usuario(Base):
     rol = relationship("Rol", back_populates="usuarios")
     estado = Column(Boolean, default=True)
 
-    # discriminador de herencia
     tipo = Column(String(50))
 
-    # auditoria
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
 
@@ -34,7 +38,6 @@ class Usuario(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # relaciones auditoria
     usuario_creador = relationship(
         "Usuario", foreign_keys=[id_usuario_creacion], remote_side=[id]
     )
@@ -44,11 +47,12 @@ class Usuario(Base):
 
     __mapper_args__ = {"polymorphic_identity": "usuario", "polymorphic_on": tipo}
 
-    # -------- SEGURIDAD --------
     def set_password(self, password: str):
+        """Hashea y almacena la contraseña del usuario."""
         self.password_hash = hash_password(password)
 
     def check_password(self, password: str) -> bool:
+        """Verifica si la contraseña en texto plano coincide con el hash almacenado."""
         return verify_password(password, self.password_hash)
 
     def __repr__(self):
