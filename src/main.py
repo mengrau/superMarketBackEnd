@@ -68,14 +68,9 @@ async def root():
 
 
 def main():
-    print("Iniciando servidor FastAPI...")
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info",
-    )
+    from menu import iniciar_menu
+
+    iniciar_menu()
 
 
 if __name__ == "__main__":
