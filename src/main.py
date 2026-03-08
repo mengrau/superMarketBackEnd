@@ -1,5 +1,6 @@
 import uvicorn
 from api import cliente
+from api import empleado
 from api import producto
 from api import proveedor
 from api import sucursal
@@ -29,6 +30,7 @@ app.add_middleware(
 
 # app.include_router(auth_router)  # Descomenta si tienes rutas de auth
 app.include_router(cliente.router, prefix="/clientes", tags=["Clientes"])
+app.include_router(empleado.router, prefix="/empleados", tags=["Empleados"])
 app.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
 app.include_router(proveedor.router, prefix="/proveedores", tags=["Proveedores"])
 app.include_router(producto.router, prefix="/productos", tags=["Productos"])
@@ -58,6 +60,7 @@ async def root():
         "redoc": "/redoc",
         "endpoints": {
             "Clientes": "/clientes",
+            "Empleados": "/empleados",
             "Usuarios": "/usuarios",
             "Proveedores": "/proveedores",
             "Productos": "/productos",

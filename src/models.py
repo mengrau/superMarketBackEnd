@@ -84,35 +84,41 @@ class ClienteRead(ClienteBase, AuditBase):
 
 
 # -----------------------
-# Empleado (hereda solo a nivel de DB, aquí schema propio)
+# Empleado (hereda de Usuario en DB)
 # -----------------------
 class EmpleadoBase(BaseModel):
     nombre: str = Field(..., max_length=120)
-    cedula: Optional[str] = Field(None, max_length=50)
+    tipo_identificacion: str = Field(..., max_length=5)
+    identificacion: str = Field(..., max_length=50)
     telefono: Optional[str] = Field(None, max_length=20)
-    fecha_ingreso: Optional[datetime] = None
-    id_sucursal: Optional[UUID] = None
-    id_rol: Optional[UUID] = None
-    estado: Optional[bool] = True
+    direccion: Optional[str] = Field(None, max_length=200)
+    cargo: Optional[str] = Field(None, max_length=80)
+    salario: Optional[str] = Field(None, max_length=50)
 
 
 class EmpleadoCreate(EmpleadoBase):
-    pass
+    username: str = Field(..., max_length=50)
+    password: str = Field(..., min_length=6)
+    id_rol: UUID
+    estado: Optional[bool] = True
+    id_usuario_creacion: Optional[UUID] = None
 
 
 class EmpleadoUpdate(BaseModel):
-    nombre: Optional[str]
-    cedula: Optional[str]
-    telefono: Optional[str]
-    fecha_ingreso: Optional[datetime]
-    id_sucursal: Optional[UUID]
-    id_rol: Optional[UUID]
-    estado: Optional[bool]
+    username: Optional[str] = Field(None, max_length=50)
+    password: Optional[str] = Field(None, min_length=6)
+    id_rol: Optional[UUID] = None
+    estado: Optional[bool] = None
+    nombre: Optional[str] = Field(None, max_length=120)
+    tipo_identificacion: Optional[str] = Field(None, max_length=5)
+    identificacion: Optional[str] = Field(None, max_length=50)
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=200)
+    cargo: Optional[str] = Field(None, max_length=80)
+    salario: Optional[str] = Field(None, max_length=50)
 
 
-class EmpleadoRead(EmpleadoBase, AuditBase):
-    id: UUID
-
+class EmpleadoRead(EmpleadoBase, UsuarioRead):
     class Config:
         from_attributes = True
 
