@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class Rol(Base):
+    """
+    Modelo ORM para la tabla 'roles'.
+    Define los perfiles de acceso y salario base asociados a los usuarios.
+    """
+
     __tablename__ = "roles"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

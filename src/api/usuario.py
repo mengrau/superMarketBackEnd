@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 from database.config import get_db
@@ -13,7 +13,6 @@ router = APIRouter()
 def create(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     crud = UsuarioCRUD(db)
     total_usuarios = db.query(Usuario).count()
-    # Permitir crear el primer usuario sin id_usuario_creacion
     id_usuario_creacion = None
     if total_usuarios > 0:
         raise HTTPException(

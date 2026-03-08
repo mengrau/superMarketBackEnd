@@ -11,6 +11,7 @@ from entities.inventario import Inventario
 from entities.producto import Producto
 from entities.sucursal import Sucursal
 
+
 class InventarioCRUD:
     """Operaciones CRUD para Inventarios."""
 
