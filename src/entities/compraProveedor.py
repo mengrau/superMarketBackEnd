@@ -22,6 +22,7 @@ class CompraProveedor(Base):
     id_proveedor = Column(
         UUID(as_uuid=True), ForeignKey("proveedores.id"), nullable=False
     )
+    id_sucursal = Column(UUID(as_uuid=True), ForeignKey("sucursales.id"), nullable=True)
 
     estado = Column(String(30), default="recibida")
 
@@ -37,6 +38,7 @@ class CompraProveedor(Base):
     )
 
     proveedor = relationship("Proveedor", back_populates="compras")
+    sucursal = relationship("Sucursal")
     detalles = relationship(
         "DetalleCompra", back_populates="compra", cascade="all, delete-orphan"
     )

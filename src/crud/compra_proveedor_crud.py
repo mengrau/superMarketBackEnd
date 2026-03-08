@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from entities.compraProveedor import CompraProveedor
 from entities.detalleCompra import DetalleCompra
+from entities.inventario import Inventario
 from entities.proveedor import Proveedor
 from entities.producto import Producto
 
@@ -22,9 +23,39 @@ class CompraProveedorCRUD:
     def __init__(self, db: Session):
         self.db = db
 
+    def _ajustar_inventario(
+        self, id_producto: UUID, id_sucursal: UUID, cantidad: int
+    ) -> None:
+        """
+        Suma o resta `cantidad` al inventario del producto en la sucursal.
+        Si no existe el registro de inventario, lo crea con stock_actual = cantidad
+        (solo si cantidad > 0).
+        """
+        inventario = (
+            self.db.query(Inventario)
+            .filter(
+                Inventario.id_producto == id_producto,
+                Inventario.id_sucursal == id_sucursal,
+            )
+            .first()
+        )
+        if inventario is None:
+            if cantidad > 0:
+                inventario = Inventario(
+                    id_producto=id_producto,
+                    id_sucursal=id_sucursal,
+                    stock_actual=cantidad,
+                    stock_minimo=0,
+                )
+                self.db.add(inventario)
+        else:
+            nuevo_stock = inventario.stock_actual + cantidad
+            inventario.stock_actual = max(0, nuevo_stock)
+
     def crear_compra(
         self,
         id_proveedor: UUID,
+        id_sucursal: Optional[UUID] = None,
         total_compra: Decimal = Decimal("0"),
         estado: str = "recibida",
         id_usuario_creacion: Optional[UUID] = None,
@@ -51,6 +82,7 @@ class CompraProveedorCRUD:
 
         compra = CompraProveedor(
             id_proveedor=id_proveedor,
+            id_sucursal=id_sucursal,
             total_compra=total_compra,
             estado=estado,
             id_usuario_creacion=id_usuario_creacion,
@@ -105,12 +137,31 @@ class CompraProveedorCRUD:
         if "estado" in kwargs and kwargs["estado"] not in ESTADOS_COMPRA:
             raise ValueError(f"Estado inválido. Opciones: {ESTADOS_COMPRA}")
 
+        estado_anterior = compra.estado
+        nuevo_estado = kwargs.get("estado", estado_anterior)
+
         if id_usuario_edicion:
             kwargs["id_usuario_edicion"] = id_usuario_edicion
 
         for key, value in kwargs.items():
             if hasattr(compra, key):
                 setattr(compra, key, value)
+
+        # Actualizar stock según la transición de estado
+        if compra.id_sucursal and estado_anterior != nuevo_estado:
+            detalles = self.obtener_detalles_por_compra(compra.id)
+            if estado_anterior == "pedida" and nuevo_estado == "recibida":
+                # Confirmar recepción: sumar stock
+                for det in detalles:
+                    self._ajustar_inventario(
+                        det.id_producto, compra.id_sucursal, det.cantidad
+                    )
+            elif estado_anterior == "recibida" and nuevo_estado == "anulada":
+                # Anular compra ya recibida: revertir stock
+                for det in detalles:
+                    self._ajustar_inventario(
+                        det.id_producto, compra.id_sucursal, -det.cantidad
+                    )
 
         self.db.commit()
         self.db.refresh(compra)
@@ -167,6 +218,10 @@ class CompraProveedorCRUD:
         subtotal = Decimal(str(precio_compra)) * cantidad
         compra.total_compra = Decimal(str(compra.total_compra or 0)) + subtotal
 
+        # Actualizar inventario si la compra ya está recibida
+        if compra.estado == "recibida" and compra.id_sucursal:
+            self._ajustar_inventario(id_producto, compra.id_sucursal, cantidad)
+
         self.db.commit()
         self.db.refresh(detalle)
         return detalle
@@ -204,6 +259,11 @@ class CompraProveedorCRUD:
                 Decimal("0"),
                 Decimal(str(compra.total_compra or 0)) - subtotal,
             )
+            # Revertir stock si la compra estaba recibida
+            if compra.estado == "recibida" and compra.id_sucursal:
+                self._ajustar_inventario(
+                    detalle.id_producto, compra.id_sucursal, -detalle.cantidad
+                )
 
         self.db.delete(detalle)
         self.db.commit()
