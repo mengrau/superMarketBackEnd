@@ -7,6 +7,12 @@ from database.config import Base
 
 
 class Inventario(Base):
+    """
+    Modelo ORM para la tabla 'inventarios'.
+    Registra el stock de un producto en una sucursal específica.
+    Implementa soft-delete mediante la columna 'estado'.
+    """
+
     __tablename__ = "inventarios"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -22,10 +28,11 @@ class Inventario(Base):
 
     estado = Column(Boolean, default=True)
 
-    # auditoría
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
-    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     fecha_actualizacion = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),

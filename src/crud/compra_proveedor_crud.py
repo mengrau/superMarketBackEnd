@@ -15,6 +15,7 @@ from entities.producto import Producto
 
 ESTADOS_COMPRA = {"pedida", "recibida", "anulada"}
 
+
 class CompraProveedorCRUD:
     """Operaciones CRUD para ComprasProveedor y sus detalles."""
 

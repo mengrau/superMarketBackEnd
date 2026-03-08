@@ -4,6 +4,11 @@ from entities import Usuario
 
 
 class Empleado(Usuario):
+    """
+    Modelo ORM para la tabla 'empleados'.
+    Hereda de Usuario mediante joined-table polymorphism.
+    """
+
     __tablename__ = "empleados"
 
     id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), primary_key=True)

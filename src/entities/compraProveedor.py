@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class CompraProveedor(Base):
+    """
+    Modelo ORM para la tabla 'compras_proveedor'.
+    El campo 'estado' indica el ciclo de vida de la orden: pedida, recibida o anulada.
+    """
+
     __tablename__ = "compras_proveedor"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -18,12 +23,13 @@ class CompraProveedor(Base):
         UUID(as_uuid=True), ForeignKey("proveedores.id"), nullable=False
     )
 
-    estado = Column(String(30), default="recibida")  # ej: pedida, recibida, anulada
+    estado = Column(String(30), default="recibida")
 
-    # auditoría
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
-    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
     fecha_actualizacion = Column(
         DateTime,
         default=lambda: datetime.now(timezone.utc),

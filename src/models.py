@@ -1,4 +1,8 @@
-# schemas.py
+"""
+Esquemas Pydantic (modelos de entrada/salida) para todas las entidades del sistema.
+Cada entidad expone tres variantes: Base, Create/Update y Read.
+"""
+
 from __future__ import annotations
 from typing import Optional, List
 from uuid import UUID
@@ -11,10 +15,9 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# -----------------------
-# Base reusable schemas
-# -----------------------
 class AuditBase(BaseModel):
+    """Campos de auditoría comunes a los esquemas de lectura."""
+
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
     id_usuario_creacion: Optional[UUID] = None
@@ -24,10 +27,9 @@ class AuditBase(BaseModel):
         from_attributes = True
 
 
-# -----------------------
-# Usuario
-# -----------------------
 class UsuarioBase(BaseModel):
+    """Campos base del Usuario."""
+
     username: str = Field(..., max_length=50)
     id_rol: UUID
     estado: Optional[bool] = True
@@ -51,10 +53,9 @@ class UsuarioRead(UsuarioBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Cliente (entidad independiente)
-# -----------------------
 class ClienteBase(BaseModel):
+    """Campos base del Cliente."""
+
     nombre: str = Field(..., max_length=120)
     identificacion: str = Field(..., max_length=50)
     email: Optional[str] = Field(None, max_length=120)
@@ -83,10 +84,9 @@ class ClienteRead(ClienteBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Empleado (hereda de Usuario en DB)
-# -----------------------
 class EmpleadoBase(BaseModel):
+    """Campos base del Empleado."""
+
     nombre: str = Field(..., max_length=120)
     tipo_identificacion: str = Field(..., max_length=5)
     identificacion: str = Field(..., max_length=50)
@@ -123,10 +123,9 @@ class EmpleadoRead(EmpleadoBase, UsuarioRead):
         from_attributes = True
 
 
-# -----------------------
-# Sucursal
-# -----------------------
 class SucursalBase(BaseModel):
+    """Campos base de la Sucursal."""
+
     nombre: str = Field(..., max_length=120)
     direccion: Optional[str] = Field(None, max_length=200)
     gerente: Optional[str] = Field(None, max_length=120)
@@ -153,10 +152,9 @@ class SucursalRead(SucursalBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Proveedor
-# -----------------------
 class ProveedorBase(BaseModel):
+    """Campos base del Proveedor."""
+
     nombre: str = Field(..., max_length=150)
     nit: str = Field(..., max_length=50)
     telefono: Optional[str] = Field(None, max_length=20)
@@ -185,10 +183,9 @@ class ProveedorRead(ProveedorBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# TipoProducto
-# -----------------------
 class TipoProductoBase(BaseModel):
+    """Campos base del TipoProducto."""
+
     nombre: str = Field(..., max_length=120)
     descripcion: Optional[str] = Field(None, max_length=300)
     estado: Optional[bool] = True
@@ -213,10 +210,9 @@ class TipoProductoRead(TipoProductoBase):
         from_attributes = True
 
 
-# -----------------------
-# Producto
-# -----------------------
 class ProductoBase(BaseModel):
+    """Campos base del Producto."""
+
     nombre: str = Field(..., max_length=200)
     codigo_barras: Optional[str] = Field(None, max_length=100)
     precio_venta: Decimal = Field(..., gt=0)
@@ -247,10 +243,9 @@ class ProductoRead(ProductoBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Inventario
-# -----------------------
 class InventarioBase(BaseModel):
+    """Campos base del Inventario."""
+
     stock_actual: int = Field(..., ge=0)
     stock_minimo: int = Field(..., ge=0)
     ubicacion: Optional[str] = Field(None, max_length=200)
@@ -279,10 +274,9 @@ class InventarioRead(InventarioBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Factura y DetalleFactura
-# -----------------------
 class DetalleFacturaBase(BaseModel):
+    """Campos base del DetalleFactura."""
+
     cantidad: int = Field(..., gt=0)
     precio_unitario: Decimal = Field(..., gt=0)
     subtotal: Decimal = Field(..., gt=0)
@@ -310,6 +304,8 @@ class DetalleFacturaRead(DetalleFacturaBase):
 
 
 class FacturaBase(BaseModel):
+    """Campos base de la Factura."""
+
     fecha: Optional[datetime] = Field(default_factory=now_utc)
     total: Decimal = Field(..., ge=0)
     metodo_pago: Optional[str] = Field(None, max_length=80)
@@ -340,10 +336,9 @@ class FacturaRead(FacturaBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# CompraProveedor y DetalleCompra
-# -----------------------
 class DetalleCompraBase(BaseModel):
+    """Campos base del DetalleCompra."""
+
     cantidad: int = Field(..., gt=0)
     precio_compra: Decimal = Field(..., gt=0)
     id_compra: UUID
@@ -370,6 +365,8 @@ class DetalleCompraRead(DetalleCompraBase):
 
 
 class CompraProveedorBase(BaseModel):
+    """Campos base de la CompraProveedor."""
+
     fecha: Optional[datetime] = Field(default_factory=now_utc)
     total_compra: Decimal = Field(..., ge=0)
     id_proveedor: UUID
@@ -393,10 +390,9 @@ class CompraProveedorRead(CompraProveedorBase, AuditBase):
         from_attributes = True
 
 
-# -----------------------
-# Rol
-# -----------------------
 class RolBase(BaseModel):
+    """Campos base del Rol."""
+
     nombre: str = Field(..., max_length=80)
     descripcion: Optional[str] = Field(None, max_length=250)
     salario: Optional[Decimal] = None

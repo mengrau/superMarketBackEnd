@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from entities.cliente import Cliente
 
+
 class ClienteCRUD:
     """Operaciones CRUD para Clientes."""
 
@@ -85,10 +86,13 @@ class ClienteCRUD:
     def obtener_cliente_por_identificacion(
         self, identificacion: str
     ) -> Optional[Cliente]:
-        """Obtiene un cliente por su número de identificación."""
+        """Obtiene un cliente activo por su número de identificación."""
         return (
             self.db.query(Cliente)
-            .filter(Cliente.identificacion == (identificacion or "").strip())
+            .filter(
+                Cliente.identificacion == (identificacion or "").strip(),
+                Cliente.estado == True,
+            )
             .first()
         )
 
