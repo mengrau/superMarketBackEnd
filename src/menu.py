@@ -10,6 +10,7 @@ from uuid import UUID
 
 from database.config import SessionLocal
 from crud.cliente_crud import ClienteCRUD
+from crud.empleado_crud import EmpleadoCRUD
 from crud.producto_crud import ProductoCRUD
 from crud.proveedor_crud import ProveedorCRUD
 from crud.sucursal_crud import SucursalCRUD
@@ -566,6 +567,115 @@ def menu_usuarios():
         pausar()
 
 
+def menu_empleados():
+    """Submenu de gestion de empleados: listar, crear, actualizar y eliminar."""
+    while True:
+        separador("EMPLEADOS")
+        print("  1. Listar empleados")
+        print("  2. Crear empleado")
+        print("  3. Actualizar empleado")
+        print("  4. Eliminar empleado (soft delete)")
+        print("  0. Volver")
+        opcion = input("Opción: ").strip()
+
+        if opcion == "0":
+            break
+
+        db = SessionLocal()
+        crud = EmpleadoCRUD(db)
+        try:
+            if opcion == "1":
+                empleados = crud.obtener_empleados()
+                if not empleados:
+                    print("  Sin registros.")
+                for e in empleados:
+                    print(
+                        f"  [{e.id}]  {e.nombre}"
+                        f"  |  {e.tipo_identificacion}: {e.identificacion}"
+                        f"  |  Cargo: {e.cargo or '-'}"
+                        f"  |  User: {e.username}"
+                    )
+
+            elif opcion == "2":
+                username = input("  Username: ").strip()
+                password = input("  Contraseña: ").strip()
+                id_rol = leer_uuid("  UUID del rol (requerido): ")
+                if id_rol is None:
+                    print("  UUID del rol requerido — operación cancelada.")
+                    pausar()
+                    continue
+                nombre = input("  Nombre completo: ").strip()
+                tipo_doc = input("  Tipo identificación (CC/NIT/CE): ").strip()
+                identificacion = input("  Número de identificación: ").strip()
+                telefono = input("  Teléfono (opcional): ").strip() or None
+                direccion = input("  Dirección (opcional): ").strip() or None
+                cargo = input("  Cargo (opcional): ").strip() or None
+                salario = input("  Salario (opcional): ").strip() or None
+                e = crud.crear_empleado(
+                    username,
+                    password,
+                    id_rol,
+                    nombre,
+                    tipo_doc,
+                    identificacion,
+                    telefono,
+                    direccion,
+                    cargo,
+                    salario,
+                )
+                print(f"  ✔ Empleado creado — ID: {e.id}")
+
+            elif opcion == "3":
+                uid = leer_uuid("  UUID del empleado a actualizar: ")
+                if uid is None:
+                    print("  Operación cancelada.")
+                else:
+                    campos = {}
+                    v = input("  Nuevo nombre (Enter para omitir): ").strip()
+                    if v:
+                        campos["nombre"] = v
+                    v = input("  Nuevo cargo (Enter para omitir): ").strip()
+                    if v:
+                        campos["cargo"] = v
+                    v = input("  Nuevo salario (Enter para omitir): ").strip()
+                    if v:
+                        campos["salario"] = v
+                    v = input("  Nuevo teléfono (Enter para omitir): ").strip()
+                    if v:
+                        campos["telefono"] = v
+                    v = input("  Nueva dirección (Enter para omitir): ").strip()
+                    if v:
+                        campos["direccion"] = v
+                    v = input("  Nueva contraseña (Enter para omitir): ").strip()
+                    if v:
+                        campos["password"] = v
+                    if campos:
+                        r = crud.actualizar_empleado(uid, **campos)
+                        print(
+                            "  ✔ Actualizado." if r else "  ✘ Empleado no encontrado."
+                        )
+                    else:
+                        print("  Sin cambios.")
+
+            elif opcion == "4":
+                uid = leer_uuid("  UUID del empleado a eliminar: ")
+                if uid:
+                    ok = crud.eliminar_empleado(uid)
+                    print("  ✔ Eliminado." if ok else "  ✘ Empleado no encontrado.")
+                else:
+                    print("  Operación cancelada.")
+
+            else:
+                print("  Opción inválida.")
+
+        except ValueError as e:
+            print(f"  ✘ Error: {e}")
+        finally:
+            db.close()
+
+        pausar()
+
+
 MENU_OPCIONES = {
     "1": ("Clientes", menu_clientes),
     "2": ("Productos", menu_productos),
@@ -573,6 +683,7 @@ MENU_OPCIONES = {
     "4": ("Sucursales", menu_sucursales),
     "5": ("Tipos de Producto", menu_tipos_producto),
     "6": ("Usuarios", menu_usuarios),
+    "7": ("Empleados", menu_empleados),
 }
 
 
@@ -585,7 +696,7 @@ def iniciar_menu():
         print("╠══════════════════════════════════════════╣")
         for k, (label, _) in MENU_OPCIONES.items():
             print(f"║  {k}. {label:<37}║")
-        print("║  7. Iniciar servidor FastAPI (API REST)  ║")
+        print("║  8. Iniciar servidor FastAPI (API REST)  ║")
         print("║  0. Salir                                ║")
         print("╚══════════════════════════════════════════╝")
 
@@ -594,7 +705,7 @@ def iniciar_menu():
         if opcion in MENU_OPCIONES:
             _, fn = MENU_OPCIONES[opcion]
             fn()
-        elif opcion == "7":
+        elif opcion == "8":
             import uvicorn
 
             print("\nIniciando servidor en http://localhost:8000 ...")
