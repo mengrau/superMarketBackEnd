@@ -370,11 +370,13 @@ class CompraProveedorBase(BaseModel):
     fecha: Optional[datetime] = Field(default_factory=now_utc)
     total_compra: Decimal = Field(..., ge=0)
     id_proveedor: UUID
+    id_sucursal: Optional[UUID] = None
     estado: Optional[str] = Field(default="recibida", max_length=30)
 
 
 class CompraProveedorCreate(BaseModel):
     id_proveedor: UUID
+    id_sucursal: Optional[UUID] = None
     detalles: List[DetalleCompraCreate] = []
 
 
