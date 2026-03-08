@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class TipoProducto(Base):
+    """
+    Modelo ORM para la tabla 'tipo_productos'.
+    Categoriza los productos del supermercado.
+    """
+
     __tablename__ = "tipo_productos"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -16,7 +21,6 @@ class TipoProducto(Base):
 
     estado = Column(Boolean, default=True)
 
-    # auditoría ligera
     fecha_creacion = Column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )

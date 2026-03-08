@@ -17,6 +17,7 @@ from entities.producto import Producto
 
 ESTADOS_FACTURA = {"emitida", "anulada", "pendiente"}
 
+
 class FacturaCRUD:
     """Operaciones CRUD para Facturas y sus detalles."""
 

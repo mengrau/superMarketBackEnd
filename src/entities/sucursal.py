@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class Sucursal(Base):
+    """
+    Modelo ORM para la tabla 'sucursales'.
+    Implementa soft-delete mediante la columna 'estado'.
+    """
+
     __tablename__ = "sucursales"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -18,7 +23,6 @@ class Sucursal(Base):
 
     estado = Column(Boolean, default=True)
 
-    # auditoria
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
 
@@ -31,7 +35,6 @@ class Sucursal(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # relaciones auditoria
     usuario_creador = relationship("Usuario", foreign_keys=[id_usuario_creacion])
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 

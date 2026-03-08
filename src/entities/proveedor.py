@@ -7,19 +7,23 @@ from database.config import Base
 
 
 class Proveedor(Base):
+    """
+    Modelo ORM para la tabla 'proveedores'.
+    Implementa soft-delete mediante la columna 'estado'.
+    """
+
     __tablename__ = "proveedores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     nombre = Column(String(150), nullable=False)
-    nit = Column(String(50), unique=True, nullable=False)
+    nit = Column(String(50), nullable=False)
     telefono = Column(String(20))
     direccion = Column(String(200))
     correo = Column(String(120))
 
     estado = Column(Boolean, default=True)
 
-    # auditoría
     id_usuario_creacion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     id_usuario_edicion = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
     fecha_creacion = Column(
@@ -34,7 +38,6 @@ class Proveedor(Base):
     usuario_creador = relationship("Usuario", foreign_keys=[id_usuario_creacion])
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 
-    # relaciones
     productos = relationship(
         "Producto", back_populates="proveedor", cascade="all, delete-orphan"
     )

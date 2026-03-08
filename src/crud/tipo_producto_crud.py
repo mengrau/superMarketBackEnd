@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from entities.tipoProducto import TipoProducto
 
+
 class TipoProductoCRUD:
     """Operaciones CRUD para TipoProducto (catálogo)."""
 
@@ -53,10 +54,13 @@ class TipoProductoCRUD:
         return self.db.get(TipoProducto, tipo_id)
 
     def obtener_tipo_por_nombre(self, nombre: str) -> Optional[TipoProducto]:
-        """Obtiene un tipo de producto por nombre (insensible a mayúsculas)."""
+        """Obtiene un tipo de producto activo por nombre (insensible a mayúsculas)."""
         return (
             self.db.query(TipoProducto)
-            .filter(TipoProducto.nombre.ilike((nombre or "").strip()))
+            .filter(
+                TipoProducto.nombre.ilike((nombre or "").strip()),
+                TipoProducto.estado == True,
+            )
             .first()
         )
 
