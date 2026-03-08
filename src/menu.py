@@ -10,7 +10,9 @@ from uuid import UUID
 
 from database.config import SessionLocal
 from crud.cliente_crud import ClienteCRUD
+from crud.compra_proveedor_crud import CompraProveedorCRUD
 from crud.empleado_crud import EmpleadoCRUD
+from crud.inventario_crud import InventarioCRUD
 from crud.producto_crud import ProductoCRUD
 from crud.proveedor_crud import ProveedorCRUD
 from crud.sucursal_crud import SucursalCRUD
@@ -676,6 +678,336 @@ def menu_empleados():
         pausar()
 
 
+def menu_inventario():
+    """Submenú de gestión de inventario."""
+    while True:
+        separador("INVENTARIO")
+        print("  1. Listar inventarios (activos)")
+        print("  2. Buscar inventario por ID")
+        print("  3. Buscar inventario por producto + sucursal")
+        print("  4. Listar inventario de una sucursal")
+        print("  5. Ver productos bajo stock mínimo")
+        print("  6. Crear inventario")
+        print("  7. Ajustar stock (sumar / restar)")
+        print("  8. Actualizar inventario")
+        print("  9. Desactivar inventario (soft delete)")
+        print("  0. Volver")
+        opcion = input("Opción: ").strip()
+
+        if opcion == "0":
+            break
+
+        db = SessionLocal()
+        crud = InventarioCRUD(db)
+        try:
+            if opcion == "1":
+                inventarios = crud.obtener_inventarios()
+                if not inventarios:
+                    print("  Sin registros.")
+                for i in inventarios:
+                    print(
+                        f"  [{i.id}]"
+                        f"  Prod: {i.id_producto}"
+                        f"  |  Suc: {i.id_sucursal}"
+                        f"  |  Stock: {i.stock_actual} (mín {i.stock_minimo})"
+                        f"  |  Ubic: {i.ubicacion or '-'}"
+                    )
+
+            elif opcion == "2":
+                uid = leer_uuid("  UUID del inventario: ")
+                if uid:
+                    inv = crud.obtener_inventario(uid)
+                    if inv:
+                        print(
+                            f"  [{inv.id}]  Prod: {inv.id_producto}"
+                            f"  |  Suc: {inv.id_sucursal}"
+                            f"  |  Stock: {inv.stock_actual} (mín {inv.stock_minimo})"
+                            f"  |  Ubic: {inv.ubicacion or '-'}"
+                        )
+                    else:
+                        print("  ✘ No encontrado.")
+
+            elif opcion == "3":
+                id_prod = leer_uuid("  UUID del producto: ")
+                id_suc = leer_uuid("  UUID de la sucursal: ")
+                if id_prod and id_suc:
+                    inv = crud.obtener_inventario_por_producto_sucursal(id_prod, id_suc)
+                    if inv:
+                        print(
+                            f"  [{inv.id}]  Stock: {inv.stock_actual}"
+                            f"  (mín {inv.stock_minimo})"
+                            f"  |  Ubic: {inv.ubicacion or '-'}"
+                        )
+                    else:
+                        print("  ✘ No existe inventario para esa combinación.")
+                else:
+                    print("  Operación cancelada.")
+
+            elif opcion == "4":
+                id_suc = leer_uuid("  UUID de la sucursal: ")
+                if id_suc:
+                    inventarios = crud.obtener_inventarios_por_sucursal(id_suc)
+                    if not inventarios:
+                        print("  Sin registros.")
+                    for i in inventarios:
+                        print(
+                            f"  [{i.id}]  Prod: {i.id_producto}"
+                            f"  |  Stock: {i.stock_actual} (mín {i.stock_minimo})"
+                            f"  |  Ubic: {i.ubicacion or '-'}"
+                        )
+
+            elif opcion == "5":
+                id_suc = leer_uuid_opcional(
+                    "  UUID de sucursal (opcional, Enter para todas): "
+                )
+                inventarios = crud.obtener_inventarios_bajo_minimo(id_sucursal=id_suc)
+                if not inventarios:
+                    print("  ✔ Ningún producto bajo el mínimo.")
+                for i in inventarios:
+                    print(
+                        f"  [{i.id}]  Prod: {i.id_producto}"
+                        f"  |  Suc: {i.id_sucursal}"
+                        f"  |  Stock: {i.stock_actual} / Mín: {i.stock_minimo}"
+                    )
+
+            elif opcion == "6":
+                id_prod = leer_uuid("  UUID del producto: ")
+                id_suc = leer_uuid("  UUID de la sucursal: ")
+                if not id_prod or not id_suc:
+                    print("  Operación cancelada.")
+                else:
+                    stock_str = input("  Stock inicial (Enter = 0): ").strip() or "0"
+                    minimo_str = input("  Stock mínimo (Enter = 0): ").strip() or "0"
+                    ubicacion = input("  Ubicación (opcional): ").strip() or None
+                    inv = crud.crear_inventario(
+                        id_producto=id_prod,
+                        id_sucursal=id_suc,
+                        stock_actual=int(stock_str),
+                        stock_minimo=int(minimo_str),
+                        ubicacion=ubicacion,
+                    )
+                    print(f"  ✔ Inventario creado — ID: {inv.id}")
+
+            elif opcion == "7":
+                uid = leer_uuid("  UUID del inventario: ")
+                if uid:
+                    cant_str = input(
+                        "  Cantidad a ajustar (positivo suma, negativo resta): "
+                    ).strip()
+                    inv = crud.ajustar_stock(uid, int(cant_str))
+                    if inv:
+                        print(f"  ✔ Stock actualizado: {inv.stock_actual}")
+                    else:
+                        print("  ✘ Inventario no encontrado.")
+                else:
+                    print("  Operación cancelada.")
+
+            elif opcion == "8":
+                uid = leer_uuid("  UUID del inventario a actualizar: ")
+                if uid is None:
+                    print("  Operación cancelada.")
+                else:
+                    campos = {}
+                    v = input("  Nuevo stock actual (Enter para omitir): ").strip()
+                    if v:
+                        campos["stock_actual"] = int(v)
+                    v = input("  Nuevo stock mínimo (Enter para omitir): ").strip()
+                    if v:
+                        campos["stock_minimo"] = int(v)
+                    v = input("  Nueva ubicación (Enter para omitir): ").strip()
+                    if v:
+                        campos["ubicacion"] = v
+                    if campos:
+                        inv = crud.actualizar_inventario(uid, **campos)
+                        print("  ✔ Actualizado." if inv else "  ✘ No encontrado.")
+                    else:
+                        print("  Sin cambios.")
+
+            elif opcion == "9":
+                uid = leer_uuid("  UUID del inventario a desactivar: ")
+                if uid:
+                    ok = crud.eliminar_inventario(uid)
+                    print("  ✔ Desactivado." if ok else "  ✘ No encontrado.")
+                else:
+                    print("  Operación cancelada.")
+
+            else:
+                print("  Opción inválida.")
+
+        except (ValueError, TypeError) as e:
+            print(f"  ✘ Error: {e}")
+        finally:
+            db.close()
+
+        pausar()
+
+
+def menu_compras_proveedor():
+    """Submenú de gestión de compras a proveedor y sus detalles."""
+    while True:
+        separador("COMPRAS PROVEEDOR")
+        print("  1. Listar compras")
+        print("  2. Buscar compra por ID")
+        print("  3. Listar compras de un proveedor")
+        print("  4. Crear compra")
+        print("  5. Cambiar estado de compra")
+        print("  6. Anular compra")
+        print("  7. Ver detalles de una compra")
+        print("  8. Agregar detalle a compra")
+        print("  9. Eliminar detalle de compra")
+        print("  0. Volver")
+        opcion = input("Opción: ").strip()
+
+        if opcion == "0":
+            break
+
+        db = SessionLocal()
+        crud = CompraProveedorCRUD(db)
+        try:
+            if opcion == "1":
+                compras = crud.obtener_compras()
+                if not compras:
+                    print("  Sin registros.")
+                for c in compras:
+                    print(
+                        f"  [{c.id}]"
+                        f"  Prov: {c.id_proveedor}"
+                        f"  |  Estado: {c.estado}"
+                        f"  |  Total: ${c.total_compra}"
+                        f"  |  Suc: {c.id_sucursal or '-'}"
+                    )
+
+            elif opcion == "2":
+                uid = leer_uuid("  UUID de la compra: ")
+                if uid:
+                    c = crud.obtener_compra(uid)
+                    if c:
+                        print(
+                            f"  [{c.id}]  Prov: {c.id_proveedor}"
+                            f"  |  Estado: {c.estado}"
+                            f"  |  Total: ${c.total_compra}"
+                            f"  |  Fecha: {c.fecha}"
+                            f"  |  Suc: {c.id_sucursal or '-'}"
+                        )
+                    else:
+                        print("  ✘ No encontrada.")
+
+            elif opcion == "3":
+                id_prov = leer_uuid("  UUID del proveedor: ")
+                if id_prov:
+                    compras = crud.obtener_compras_por_proveedor(id_prov)
+                    if not compras:
+                        print("  Sin registros.")
+                    for c in compras:
+                        print(
+                            f"  [{c.id}]  Estado: {c.estado}"
+                            f"  |  Total: ${c.total_compra}"
+                            f"  |  Suc: {c.id_sucursal or '-'}"
+                        )
+
+            elif opcion == "4":
+                id_prov = leer_uuid("  UUID del proveedor: ")
+                if not id_prov:
+                    print("  Operación cancelada.")
+                else:
+                    id_suc = leer_uuid_opcional(
+                        "  UUID de la sucursal destino (opcional, Enter para omitir): "
+                    )
+                    print(
+                        "  Estado inicial: pedida / recibida (Enter = recibida): ",
+                        end="",
+                    )
+                    estado = input().strip() or "recibida"
+                    c = crud.crear_compra(
+                        id_proveedor=id_prov,
+                        id_sucursal=id_suc,
+                        estado=estado,
+                    )
+                    print(f"  ✔ Compra creada — ID: {c.id}  Estado: {c.estado}")
+
+            elif opcion == "5":
+                uid = leer_uuid("  UUID de la compra: ")
+                if uid:
+                    print("  Nuevo estado (pedida / recibida / anulada): ", end="")
+                    estado = input().strip()
+                    c = crud.actualizar_compra(uid, estado=estado)
+                    if c:
+                        print(f"  ✔ Estado actualizado a: {c.estado}")
+                    else:
+                        print("  ✘ Compra no encontrada.")
+                else:
+                    print("  Operación cancelada.")
+
+            elif opcion == "6":
+                uid = leer_uuid("  UUID de la compra a anular: ")
+                if uid:
+                    c = crud.anular_compra(uid)
+                    if c:
+                        print(f"  ✔ Compra anulada. Stock revertido si aplica.")
+                    else:
+                        print("  ✘ Compra no encontrada.")
+                else:
+                    print("  Operación cancelada.")
+
+            elif opcion == "7":
+                uid = leer_uuid("  UUID de la compra: ")
+                if uid:
+                    detalles = crud.obtener_detalles_por_compra(uid)
+                    if not detalles:
+                        print("  Sin detalles registrados.")
+                    for d in detalles:
+                        print(
+                            f"  [{d.id}]  Prod: {d.id_producto}"
+                            f"  |  Cant: {d.cantidad}"
+                            f"  |  P.Compra: ${d.precio_compra}"
+                            f"  |  Sub: ${Decimal(str(d.precio_compra)) * d.cantidad}"
+                        )
+
+            elif opcion == "8":
+                id_compra = leer_uuid("  UUID de la compra: ")
+                if not id_compra:
+                    print("  Operación cancelada.")
+                else:
+                    id_prod = leer_uuid("  UUID del producto: ")
+                    if not id_prod:
+                        print("  Operación cancelada.")
+                    else:
+                        cant_str = input("  Cantidad: ").strip()
+                        precio_str = input("  Precio de compra por unidad: ").strip()
+                        try:
+                            d = crud.agregar_detalle(
+                                id_compra=id_compra,
+                                id_producto=id_prod,
+                                cantidad=int(cant_str),
+                                precio_compra=Decimal(precio_str),
+                            )
+                            print(f"  ✔ Detalle agregado — ID: {d.id}")
+                        except InvalidOperation:
+                            print("  ✘ Precio inválido.")
+
+            elif opcion == "9":
+                uid = leer_uuid("  UUID del detalle a eliminar: ")
+                if uid:
+                    ok = crud.eliminar_detalle(uid)
+                    print(
+                        "  ✔ Detalle eliminado. Stock ajustado si aplica."
+                        if ok
+                        else "  ✘ Detalle no encontrado."
+                    )
+                else:
+                    print("  Operación cancelada.")
+
+            else:
+                print("  Opción inválida.")
+
+        except (ValueError, TypeError) as e:
+            print(f"  ✘ Error: {e}")
+        finally:
+            db.close()
+
+        pausar()
+
+
 MENU_OPCIONES = {
     "1": ("Clientes", menu_clientes),
     "2": ("Productos", menu_productos),
@@ -684,6 +1016,8 @@ MENU_OPCIONES = {
     "5": ("Tipos de Producto", menu_tipos_producto),
     "6": ("Usuarios", menu_usuarios),
     "7": ("Empleados", menu_empleados),
+    "8": ("Inventario", menu_inventario),
+    "9": ("Compras Proveedor", menu_compras_proveedor),
 }
 
 
@@ -696,7 +1030,7 @@ def iniciar_menu():
         print("╠══════════════════════════════════════════╣")
         for k, (label, _) in MENU_OPCIONES.items():
             print(f"║  {k}. {label:<37}║")
-        print("║  8. Iniciar servidor FastAPI (API REST)  ║")
+        print("║  10. Iniciar servidor FastAPI (API REST) ║")
         print("║  0. Salir                                ║")
         print("╚══════════════════════════════════════════╝")
 
@@ -705,7 +1039,7 @@ def iniciar_menu():
         if opcion in MENU_OPCIONES:
             _, fn = MENU_OPCIONES[opcion]
             fn()
-        elif opcion == "8":
+        elif opcion == "10":
             import uvicorn
 
             print("\nIniciando servidor en http://localhost:8000 ...")
