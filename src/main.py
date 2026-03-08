@@ -6,7 +6,9 @@ arranque e inicia el menú de consola cuando se ejecuta directamente.
 
 import uvicorn
 from api import cliente
+from api import compra_proveedor
 from api import empleado
+from api import inventario
 from api import producto
 from api import proveedor
 from api import sucursal
@@ -43,6 +45,12 @@ app.include_router(
     prefix="/tipos-producto",
     tags=["Tipos de Producto"],
 )
+app.include_router(inventario.router, prefix="/inventarios", tags=["Inventarios"])
+app.include_router(
+    compra_proveedor.router,
+    prefix="/compras-proveedor",
+    tags=["Compras Proveedor"],
+)
 
 
 @app.on_event("startup")
@@ -69,6 +77,8 @@ async def root():
             "Productos": "/productos",
             "Sucursales": "/sucursales",
             "TiposProducto": "/tipos-producto",
+            "Inventarios": "/inventarios",
+            "ComprasProveedor": "/compras-proveedor",
         },
     }
 
