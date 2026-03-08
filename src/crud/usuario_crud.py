@@ -50,7 +50,14 @@ class UsuarioCRUD:
         if not password:
             raise ValueError("La contrasena es obligatoria")
 
-        if self.obtener_usuario_por_username(username):
+        if (
+            self.db.query(Usuario)
+            .filter(
+                Usuario.username.ilike(username.strip()),
+                Usuario.estado == True,
+            )
+            .first()
+        ):
             raise ValueError("El username ya esta en uso")
 
         if self.db.get(Rol, id_rol) is None:
@@ -61,7 +68,6 @@ class UsuarioCRUD:
             id_rol=id_rol,
             id_usuario_creacion=id_usuario_creacion,
         )
-        # Truncar la contraseña a 72 caracteres para evitar error de passlib/bcrypt
         truncated_password = password[:72]
         usuario.set_password(truncated_password)
 
@@ -200,7 +206,6 @@ class UsuarioCRUD:
             if self.db.get(Rol, kwargs["id_rol"]) is None:
                 raise ValueError("El rol especificado no existe")
 
-        # Manejar cambio de contraseña si se proporciona
         new_password = kwargs.pop("password", None)
         kwargs.pop("password_hash", None)
 

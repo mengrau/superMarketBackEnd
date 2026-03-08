@@ -13,6 +13,7 @@ from entities.producto import Producto
 from entities.tipoProducto import TipoProducto
 from entities.proveedor import Proveedor
 
+
 class ProductoCRUD:
     """Operaciones CRUD para Productos."""
 
@@ -82,10 +83,13 @@ class ProductoCRUD:
     def obtener_producto_por_codigo_barras(
         self, codigo_barras: str
     ) -> Optional[Producto]:
-        """Obtiene un producto por código de barras."""
+        """Obtiene un producto activo por código de barras."""
         return (
             self.db.query(Producto)
-            .filter(Producto.codigo_barras == (codigo_barras or "").strip())
+            .filter(
+                Producto.codigo_barras == (codigo_barras or "").strip(),
+                Producto.estado == True,
+            )
             .first()
         )
 

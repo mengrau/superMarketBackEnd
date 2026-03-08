@@ -7,6 +7,11 @@ from database.config import Base
 
 
 class DetalleFactura(Base):
+    """
+    Modelo ORM para la tabla 'detalle_facturas'.
+    Representa una línea de producto dentro de una Factura.
+    """
+
     __tablename__ = "detalle_facturas"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -18,7 +23,9 @@ class DetalleFactura(Base):
     id_factura = Column(UUID(as_uuid=True), ForeignKey("facturas.id"), nullable=False)
     id_producto = Column(UUID(as_uuid=True), ForeignKey("productos.id"), nullable=False)
 
-    fecha_creacion = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    fecha_creacion = Column(
+        DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
 
     factura = relationship("Factura", back_populates="detalles")
     producto = relationship("Producto", back_populates="detalle_facturas")

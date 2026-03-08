@@ -10,7 +10,6 @@ from alembic import context
 from database.config import Base
 from database.config import DATABASE_URL
 
-# importa todos tus modelos
 import entities
 
 config = context.config

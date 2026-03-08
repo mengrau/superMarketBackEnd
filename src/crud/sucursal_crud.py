@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from entities.sucursal import Sucursal
 
+
 class SucursalCRUD:
     """Operaciones CRUD para Sucursales."""
 
@@ -62,10 +63,13 @@ class SucursalCRUD:
         return self.db.get(Sucursal, sucursal_id)
 
     def obtener_sucursal_por_nombre(self, nombre: str) -> Optional[Sucursal]:
-        """Obtiene una sucursal por nombre (búsqueda exacta, sin importar mayúsculas)."""
+        """Obtiene una sucursal activa por nombre (búsqueda exacta, sin importar mayúsculas)."""
         return (
             self.db.query(Sucursal)
-            .filter(Sucursal.nombre.ilike((nombre or "").strip()))
+            .filter(
+                Sucursal.nombre.ilike((nombre or "").strip()),
+                Sucursal.estado == True,
+            )
             .first()
         )
 

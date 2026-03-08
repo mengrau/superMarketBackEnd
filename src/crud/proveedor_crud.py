@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from entities.proveedor import Proveedor
 
+
 class ProveedorCRUD:
     """Operaciones CRUD para Proveedores."""
 
@@ -74,10 +75,13 @@ class ProveedorCRUD:
         return self.db.get(Proveedor, proveedor_id)
 
     def obtener_proveedor_por_nit(self, nit: str) -> Optional[Proveedor]:
-        """Obtiene un proveedor por su NIT."""
+        """Obtiene un proveedor activo por su NIT."""
         return (
             self.db.query(Proveedor)
-            .filter(Proveedor.nit == (nit or "").strip())
+            .filter(
+                Proveedor.nit == (nit or "").strip(),
+                Proveedor.estado == True,
+            )
             .first()
         )
 
