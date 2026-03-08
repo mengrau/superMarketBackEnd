@@ -584,9 +584,9 @@ def iniciar_menu():
         print("║     SUPERMERCADO — MENÚ PRINCIPAL        ║")
         print("╠══════════════════════════════════════════╣")
         for k, (label, _) in MENU_OPCIONES.items():
-            print(f"║  {k}. {label:<39}║")
-        print("║  7. Iniciar servidor FastAPI (API REST)   ║")
-        print("║  0. Salir                                 ║")
+            print(f"║  {k}. {label:<37}║")
+        print("║  7. Iniciar servidor FastAPI (API REST)  ║")
+        print("║  0. Salir                                ║")
         print("╚══════════════════════════════════════════╝")
 
         opcion = input("Opción: ").strip()
