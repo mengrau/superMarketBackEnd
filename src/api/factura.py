@@ -1,0 +1,102 @@
+from typing import List
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from crud.factura_crud import FacturaCRUD
+from database.config import get_db
+from models import (
+    FacturaCreate,
+    FacturaRead,
+    FacturaUpdate,
+)
+
+router = APIRouter()
+
+
+@router.post("/", response_model=FacturaRead)
+def create(factura: FacturaCreate, db: Session = Depends(get_db)):
+    crud = FacturaCRUD(db)
+    try:
+        nueva_factura = crud.crear_factura(
+            id_cliente=factura.id_cliente,
+            id_empleado=factura.id_empleado,
+            id_sucursal=factura.id_sucursal,
+            metodo_pago=factura.metodo_pago,
+        )
+        for detalle in factura.detalles:
+            crud.agregar_detalle(
+                id_factura=nueva_factura.id,
+                id_producto=detalle.id_producto,
+                cantidad=detalle.cantidad,
+                precio_unitario=detalle.precio_unitario,
+            )
+        db.refresh(nueva_factura)
+        return nueva_factura
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/", response_model=List[FacturaRead])
+def list_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    crud = FacturaCRUD(db)
+    return crud.obtener_facturas(skip=skip, limit=limit)
+
+
+@router.get("/cliente/{cliente_id}", response_model=List[FacturaRead])
+def get_by_cliente(
+    cliente_id: UUID,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    crud = FacturaCRUD(db)
+    return crud.obtener_facturas_por_cliente(
+        id_cliente=cliente_id, skip=skip, limit=limit
+    )
+
+
+@router.get("/sucursal/{sucursal_id}", response_model=List[FacturaRead])
+def get_by_sucursal(
+    sucursal_id: UUID,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+):
+    crud = FacturaCRUD(db)
+    return crud.obtener_facturas_por_sucursal(
+        id_sucursal=sucursal_id, skip=skip, limit=limit
+    )
+
+
+@router.get("/{factura_id}", response_model=FacturaRead)
+def get_one(factura_id: UUID, db: Session = Depends(get_db)):
+    crud = FacturaCRUD(db)
+    factura = crud.obtener_factura(factura_id)
+    if not factura:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    return factura
+
+
+@router.put("/{factura_id}", response_model=FacturaRead)
+def update(factura_id: UUID, datos: FacturaUpdate, db: Session = Depends(get_db)):
+    crud = FacturaCRUD(db)
+    try:
+        factura = crud.actualizar_factura(
+            factura_id, **datos.model_dump(exclude_unset=True)
+        )
+        if not factura:
+            raise HTTPException(status_code=404, detail="Factura no encontrada")
+        return factura
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/{factura_id}/anular", response_model=FacturaRead)
+def anular(factura_id: UUID, db: Session = Depends(get_db)):
+    crud = FacturaCRUD(db)
+    factura = crud.anular_factura(factura_id)
+    if not factura:
+        raise HTTPException(status_code=404, detail="Factura no encontrada")
+    return factura
