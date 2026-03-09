@@ -64,14 +64,9 @@ O directamente desde el menú principal, usa la **opción 13** para iniciar el s
 4. Actualizar el rol y confirmar el cambio consultando nuevamente la lista.
 5. Repetir para clientes, productos, empleados, etc.
 
-## Endpoints conocidos sin equivalente en el menú anterior
+## Observaciones
 
-| Característica                                         | Estado                                                                                                                         |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `GET /inventarios/sucursal/{id}` + filtro por producto | ✅ Implementado (filtrado client-side)                                                                                         |
-| Autenticar usuario                                     | ⚠ No existe endpoint `/usuarios/autenticar`. La opción 6 del submenú de Usuarios muestra un aviso.                             |
-| Cambiar contraseña verificando la contraseña actual    | ⚠ El endpoint `PUT /usuarios/{id}` no valida la contraseña antigua. Se actualiza directamente.                                 |
-| `tipo_identificacion` en Clientes                      | ⚠ El esquema `ClienteRead`/`ClienteCreate` no expone este campo. Al crear/listar clientes, el campo no se envía ni se muestra. |
+Consulta la documentación interactiva en `http://localhost:8000/docs` para la lista completa de endpoints, ejemplos y esquema de datos.
 
 ## Mantenimiento
 
