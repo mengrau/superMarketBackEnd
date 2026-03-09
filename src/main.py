@@ -14,6 +14,11 @@ from api import proveedor
 from api import sucursal
 from api import tipo_producto
 from api import usuario
+from api import factura
+from api import detalleFactura
+from api import detalleCompra
+from api import rol
+
 from database.config import create_tables
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,6 +56,14 @@ app.include_router(
     prefix="/compras-proveedor",
     tags=["Compras Proveedor"],
 )
+app.include_router(factura.router, prefix="/facturas", tags=["Facturas"])
+app.include_router(detalleFactura.router, prefix="/facturas", tags=["Detalle Factura"])
+app.include_router(
+    detalleCompra.router,
+    prefix="/compras-proveedor",
+    tags=["Detalle Compra"],
+)
+app.include_router(rol.router, prefix="/roles", tags=["Roles"])
 
 
 @app.on_event("startup")
