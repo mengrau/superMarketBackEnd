@@ -11,7 +11,7 @@ from models import InventarioCreate, InventarioRead, InventarioUpdate
 router = APIRouter()
 
 
-@router.post("/", response_model=InventarioRead)
+@router.post("/", response_model=InventarioRead, status_code=201)
 def create(inventario: InventarioCreate, db: Session = Depends(get_db)):
     crud = InventarioCRUD(db)
     try:

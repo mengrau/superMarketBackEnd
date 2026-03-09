@@ -1,6 +1,10 @@
 """
 Menú de consola para gestión del Supermercado.
-Permite interactuar con los CRUD de todas las entidades.
+Consume la API REST de FastAPI en lugar de acceder directamente a la base de datos.
+
+Antes de usar el menú asegúrate de que la API esté corriendo:
+    uvicorn src.main:app --reload
+o usa la opción 13 del menú principal para iniciarla.
 """
 
 import os
@@ -8,18 +12,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Optional
 from uuid import UUID
 
-from database.config import SessionLocal
-from crud.cliente_crud import ClienteCRUD
-from crud.compra_proveedor_crud import CompraProveedorCRUD
-from crud.empleado_crud import EmpleadoCRUD
-from crud.inventario_crud import InventarioCRUD
-from crud.producto_crud import ProductoCRUD
-from crud.proveedor_crud import ProveedorCRUD
-from crud.sucursal_crud import SucursalCRUD
-from crud.tipo_producto_crud import TipoProductoCRUD
-from crud.usuario_crud import UsuarioCRUD
-from crud.factura_crud import FacturaCRUD
-from crud.rol_crud import RolCRUD
+import http_client
 
 
 def limpiar_pantalla():
@@ -76,32 +69,36 @@ def menu_clientes():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = ClienteCRUD(db)
         try:
             if opcion == "1":
-                clientes = crud.obtener_clientes()
+                clientes = http_client.get("/clientes/", params={"limit": 200})
                 if not clientes:
                     print("  Sin registros.")
                 for c in clientes:
                     print(
-                        f"  [{c.id}]  {c.nombre}"
-                        f"  |  {c.tipo_identificacion}: {c.identificacion}"
-                        f"  |  Email: {c.email or '-'}"
-                        f"  |  Tel: {c.telefono or '-'}"
+                        f"  [{c['id']}]  {c['nombre']}"
+                        f"  |  {c['identificacion']}"
+                        f"  |  Email: {c.get('email') or '-'}"
+                        f"  |  Tel: {c.get('telefono') or '-'}"
                     )
 
             elif opcion == "2":
                 nombre = input("  Nombre completo: ").strip()
-                tipo_doc = input("  Tipo identificación (CC/NIT/CE): ").strip()
                 identificacion = input("  Número de identificación: ").strip()
                 email = input("  Email (opcional): ").strip() or None
                 telefono = input("  Teléfono (opcional): ").strip() or None
                 direccion = input("  Dirección (opcional): ").strip() or None
-                c = crud.crear_cliente(
-                    nombre, tipo_doc, identificacion, email, telefono, direccion
+                c = http_client.post(
+                    "/clientes/",
+                    {
+                        "nombre": nombre,
+                        "identificacion": identificacion,
+                        "email": email,
+                        "telefono": telefono,
+                        "direccion": direccion,
+                    },
                 )
-                print(f"  ✔ Cliente creado — ID: {c.id}")
+                print(f"  ✔ Cliente creado — ID: {c['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del cliente a actualizar: ")
@@ -122,26 +119,26 @@ def menu_clientes():
                     if v:
                         campos["direccion"] = v
                     if campos:
-                        r = crud.actualizar_cliente(uid, **campos)
-                        print("  ✔ Actualizado." if r else "  ✘ Cliente no encontrado.")
+                        http_client.put(f"/clientes/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del cliente a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_cliente(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Cliente no encontrado.")
+                    http_client.delete(f"/clientes/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -160,18 +157,16 @@ def menu_productos():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = ProductoCRUD(db)
         try:
             if opcion == "1":
-                productos = crud.obtener_productos()
+                productos = http_client.get("/productos/", params={"limit": 200})
                 if not productos:
                     print("  Sin registros.")
                 for p in productos:
                     print(
-                        f"  [{p.id}]  {p.nombre}"
-                        f"  |  ${p.precio_venta}"
-                        f"  |  CB: {p.codigo_barras or '-'}"
+                        f"  [{p['id']}]  {p['nombre']}"
+                        f"  |  ${p['precio_venta']}"
+                        f"  |  CB: {p.get('codigo_barras') or '-'}"
                     )
 
             elif opcion == "2":
@@ -190,14 +185,17 @@ def menu_productos():
                 id_proveedor = leer_uuid_opcional(
                     "  UUID proveedor (opcional, Enter para omitir): "
                 )
-                p = crud.crear_producto(
-                    nombre,
-                    precio,
-                    codigo_barras,
-                    id_tipo=id_tipo,
-                    id_proveedor=id_proveedor,
+                p = http_client.post(
+                    "/productos/",
+                    {
+                        "nombre": nombre,
+                        "precio_venta": str(precio),
+                        "codigo_barras": codigo_barras,
+                        "id_tipo": str(id_tipo) if id_tipo else None,
+                        "id_proveedor": str(id_proveedor) if id_proveedor else None,
+                    },
                 )
-                print(f"  ✔ Producto creado — ID: {p.id}")
+                print(f"  ✔ Producto creado — ID: {p['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del producto a actualizar: ")
@@ -211,35 +209,33 @@ def menu_productos():
                     v = input("  Nuevo precio (Enter para omitir): ").strip()
                     if v:
                         try:
-                            campos["precio_venta"] = Decimal(v)
+                            campos["precio_venta"] = str(Decimal(v))
                         except InvalidOperation:
                             print("  Precio inválido, se omitirá.")
                     v = input("  Nuevo código de barras (Enter para omitir): ").strip()
                     if v:
                         campos["codigo_barras"] = v
                     if campos:
-                        r = crud.actualizar_producto(uid, **campos)
-                        print(
-                            "  ✔ Actualizado." if r else "  ✘ Producto no encontrado."
-                        )
+                        http_client.put(f"/productos/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del producto a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_producto(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Producto no encontrado.")
+                    http_client.delete(f"/productos/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -258,19 +254,17 @@ def menu_proveedores():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = ProveedorCRUD(db)
         try:
             if opcion == "1":
-                proveedores = crud.obtener_proveedores()
+                proveedores = http_client.get("/proveedores/", params={"limit": 200})
                 if not proveedores:
                     print("  Sin registros.")
                 for p in proveedores:
                     print(
-                        f"  [{p.id}]  {p.nombre}"
-                        f"  |  NIT: {p.nit}"
-                        f"  |  {p.correo or '-'}"
-                        f"  |  Tel: {p.telefono or '-'}"
+                        f"  [{p['id']}]  {p['nombre']}"
+                        f"  |  NIT: {p['nit']}"
+                        f"  |  {p.get('correo') or '-'}"
+                        f"  |  Tel: {p.get('telefono') or '-'}"
                     )
 
             elif opcion == "2":
@@ -279,8 +273,17 @@ def menu_proveedores():
                 telefono = input("  Teléfono (opcional): ").strip() or None
                 direccion = input("  Dirección (opcional): ").strip() or None
                 correo = input("  Correo (opcional): ").strip() or None
-                p = crud.crear_proveedor(nombre, nit, telefono, direccion, correo)
-                print(f"  ✔ Proveedor creado — ID: {p.id}")
+                p = http_client.post(
+                    "/proveedores/",
+                    {
+                        "nombre": nombre,
+                        "nit": nit,
+                        "telefono": telefono,
+                        "direccion": direccion,
+                        "correo": correo,
+                    },
+                )
+                print(f"  ✔ Proveedor creado — ID: {p['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del proveedor a actualizar: ")
@@ -301,28 +304,26 @@ def menu_proveedores():
                     if v:
                         campos["telefono"] = v
                     if campos:
-                        r = crud.actualizar_proveedor(uid, **campos)
-                        print(
-                            "  ✔ Actualizado." if r else "  ✘ Proveedor no encontrado."
-                        )
+                        http_client.put(f"/proveedores/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del proveedor a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_proveedor(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Proveedor no encontrado.")
+                    http_client.delete(f"/proveedores/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -341,19 +342,17 @@ def menu_sucursales():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = SucursalCRUD(db)
         try:
             if opcion == "1":
-                sucursales = crud.obtener_sucursales()
+                sucursales = http_client.get("/sucursales/", params={"limit": 200})
                 if not sucursales:
                     print("  Sin registros.")
                 for s in sucursales:
                     print(
-                        f"  [{s.id}]  {s.nombre}"
-                        f"  |  Dir: {s.direccion or '-'}"
-                        f"  |  Gerente: {s.gerente or '-'}"
-                        f"  |  Tel: {s.telefono or '-'}"
+                        f"  [{s['id']}]  {s['nombre']}"
+                        f"  |  Dir: {s.get('direccion') or '-'}"
+                        f"  |  Gerente: {s.get('gerente') or '-'}"
+                        f"  |  Tel: {s.get('telefono') or '-'}"
                     )
 
             elif opcion == "2":
@@ -361,8 +360,16 @@ def menu_sucursales():
                 direccion = input("  Dirección (opcional): ").strip() or None
                 gerente = input("  Gerente (opcional): ").strip() or None
                 telefono = input("  Teléfono (opcional): ").strip() or None
-                s = crud.crear_sucursal(nombre, direccion, gerente, telefono)
-                print(f"  ✔ Sucursal creada — ID: {s.id}")
+                s = http_client.post(
+                    "/sucursales/",
+                    {
+                        "nombre": nombre,
+                        "direccion": direccion,
+                        "gerente": gerente,
+                        "telefono": telefono,
+                    },
+                )
+                print(f"  ✔ Sucursal creada — ID: {s['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID de la sucursal a actualizar: ")
@@ -383,28 +390,26 @@ def menu_sucursales():
                     if v:
                         campos["telefono"] = v
                     if campos:
-                        r = crud.actualizar_sucursal(uid, **campos)
-                        print(
-                            "  ✔ Actualizada." if r else "  ✘ Sucursal no encontrada."
-                        )
+                        http_client.put(f"/sucursales/{uid}", campos)
+                        print("  ✔ Actualizada.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID de la sucursal a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_sucursal(uid)
-                    print("  ✔ Eliminada." if ok else "  ✘ Sucursal no encontrada.")
+                    http_client.delete(f"/sucursales/{uid}")
+                    print("  ✔ Eliminada.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -423,21 +428,27 @@ def menu_tipos_producto():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = TipoProductoCRUD(db)
         try:
             if opcion == "1":
-                tipos = crud.obtener_tipos_producto()
+                tipos = http_client.get("/tipos-producto/", params={"limit": 200})
                 if not tipos:
                     print("  Sin registros.")
                 for t in tipos:
-                    print(f"  [{t.id}]  {t.nombre}" f"  |  {t.descripcion or '-'}")
+                    print(
+                        f"  [{t['id']}]  {t['nombre']}  |  {t.get('descripcion') or '-'}"
+                    )
 
             elif opcion == "2":
                 nombre = input("  Nombre: ").strip()
                 descripcion = input("  Descripción (opcional): ").strip() or None
-                t = crud.crear_tipo_producto(nombre, descripcion)
-                print(f"  ✔ Tipo de producto creado — ID: {t.id}")
+                t = http_client.post(
+                    "/tipos-producto/",
+                    {
+                        "nombre": nombre,
+                        "descripcion": descripcion,
+                    },
+                )
+                print(f"  ✔ Tipo de producto creado — ID: {t['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del tipo a actualizar: ")
@@ -452,32 +463,32 @@ def menu_tipos_producto():
                     if v:
                         campos["descripcion"] = v
                     if campos:
-                        r = crud.actualizar_tipo_producto(uid, **campos)
-                        print("  ✔ Actualizado." if r else "  ✘ Tipo no encontrado.")
+                        http_client.put(f"/tipos-producto/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del tipo a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_tipo_producto(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Tipo no encontrado.")
+                    http_client.delete(f"/tipos-producto/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
 
 def menu_usuarios():
-    """Submenu de gestion de usuarios: listar, crear, actualizar, eliminar, cambiar contraseña y autenticar."""
+    """Submenu de gestion de usuarios: listar, crear, actualizar, eliminar y cambiar contraseña."""
     while True:
         separador("USUARIOS")
         print("  1. Listar usuarios")
@@ -492,15 +503,13 @@ def menu_usuarios():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = UsuarioCRUD(db)
         try:
             if opcion == "1":
-                usuarios = crud.obtener_usuarios()
+                usuarios = http_client.get("/usuarios/")
                 if not usuarios:
                     print("  Sin registros.")
                 for u in usuarios:
-                    print(f"  [{u.id}]  {u.username}" f"  |  Rol: {u.id_rol}")
+                    print(f"  [{u['id']}]  {u['username']}" f"  |  Rol: {u['id_rol']}")
 
             elif opcion == "2":
                 username = input("  Username: ").strip()
@@ -509,8 +518,15 @@ def menu_usuarios():
                 if id_rol is None:
                     print("  UUID del rol requerido — operación cancelada.")
                 else:
-                    u = crud.crear_usuario(username, password, id_rol)
-                    print(f"  ✔ Usuario creado — ID: {u.id}")
+                    u = http_client.post(
+                        "/usuarios/",
+                        {
+                            "username": username,
+                            "password": password,
+                            "id_rol": str(id_rol),
+                        },
+                    )
+                    print(f"  ✔ Usuario creado — ID: {u['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del usuario a actualizar: ")
@@ -522,51 +538,42 @@ def menu_usuarios():
                     if v:
                         campos["username"] = v
                     if campos:
-                        r = crud.actualizar_usuario(uid, **campos)
-                        print("  ✔ Actualizado." if r else "  ✘ Usuario no encontrado.")
+                        http_client.put(f"/usuarios/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del usuario a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_usuario(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Usuario no encontrado.")
+                    http_client.delete(f"/usuarios/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             elif opcion == "5":
                 uid = leer_uuid("  UUID del usuario: ")
                 if uid:
-                    actual = input("  Contraseña actual: ").strip()
                     nueva = input("  Nueva contraseña: ").strip()
-                    ok = crud.cambiar_contrasena(uid, actual, nueva)
-                    print(
-                        "  ✔ Contraseña actualizada."
-                        if ok
-                        else "  ✘ Usuario no encontrado."
-                    )
+                    http_client.put(f"/usuarios/{uid}", {"password": nueva})
+                    print("  ✔ Contraseña actualizada.")
                 else:
                     print("  Operación cancelada.")
 
             elif opcion == "6":
-                username = input("  Username: ").strip()
-                password = input("  Contraseña: ").strip()
-                u = crud.autenticar_usuario(username, password)
-                if u:
-                    print(
-                        f"  ✔ Autenticación exitosa — {u.username}  |  Rol: {u.id_rol}"
-                    )
-                else:
-                    print("  ✘ Credenciales incorrectas o usuario inactivo.")
+                print(
+                    "  ⚠ Autenticación no disponible via API REST "
+                    "(endpoint no implementado en los routers actuales)."
+                )
+                print("  Usa POST /auth/login si agregas un router de autenticación.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -585,19 +592,17 @@ def menu_empleados():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = EmpleadoCRUD(db)
         try:
             if opcion == "1":
-                empleados = crud.obtener_empleados()
+                empleados = http_client.get("/empleados/", params={"limit": 200})
                 if not empleados:
                     print("  Sin registros.")
                 for e in empleados:
                     print(
-                        f"  [{e.id}]  {e.nombre}"
-                        f"  |  {e.tipo_identificacion}: {e.identificacion}"
-                        f"  |  Cargo: {e.cargo or '-'}"
-                        f"  |  User: {e.username}"
+                        f"  [{e['id']}]  {e['nombre']}"
+                        f"  |  {e.get('tipo_identificacion', '')}: {e['identificacion']}"
+                        f"  |  Cargo: {e.get('cargo') or '-'}"
+                        f"  |  User: {e['username']}"
                     )
 
             elif opcion == "2":
@@ -615,19 +620,22 @@ def menu_empleados():
                 direccion = input("  Dirección (opcional): ").strip() or None
                 cargo = input("  Cargo (opcional): ").strip() or None
                 salario = input("  Salario (opcional): ").strip() or None
-                e = crud.crear_empleado(
-                    username,
-                    password,
-                    id_rol,
-                    nombre,
-                    tipo_doc,
-                    identificacion,
-                    telefono,
-                    direccion,
-                    cargo,
-                    salario,
+                e = http_client.post(
+                    "/empleados/",
+                    {
+                        "username": username,
+                        "password": password,
+                        "id_rol": str(id_rol),
+                        "nombre": nombre,
+                        "tipo_identificacion": tipo_doc,
+                        "identificacion": identificacion,
+                        "telefono": telefono,
+                        "direccion": direccion,
+                        "cargo": cargo,
+                        "salario": salario,
+                    },
                 )
-                print(f"  ✔ Empleado creado — ID: {e.id}")
+                print(f"  ✔ Empleado creado — ID: {e['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del empleado a actualizar: ")
@@ -654,28 +662,26 @@ def menu_empleados():
                     if v:
                         campos["password"] = v
                     if campos:
-                        r = crud.actualizar_empleado(uid, **campos)
-                        print(
-                            "  ✔ Actualizado." if r else "  ✘ Empleado no encontrado."
-                        )
+                        http_client.put(f"/empleados/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "4":
                 uid = leer_uuid("  UUID del empleado a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_empleado(uid)
-                    print("  ✔ Eliminado." if ok else "  ✘ Empleado no encontrado.")
+                    http_client.delete(f"/empleados/{uid}")
+                    print("  ✔ Eliminado.")
                 else:
                     print("  Operación cancelada.")
 
             else:
                 print("  Opción inválida.")
 
-        except ValueError as e:
+        except RuntimeError as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -699,46 +705,52 @@ def menu_inventario():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = InventarioCRUD(db)
         try:
             if opcion == "1":
-                inventarios = crud.obtener_inventarios()
+                inventarios = http_client.get(
+                    "/inventarios/", params={"limit": 200, "solo_activos": True}
+                )
                 if not inventarios:
                     print("  Sin registros.")
                 for i in inventarios:
                     print(
-                        f"  [{i.id}]"
-                        f"  Prod: {i.id_producto}"
-                        f"  |  Suc: {i.id_sucursal}"
-                        f"  |  Stock: {i.stock_actual} (mín {i.stock_minimo})"
-                        f"  |  Ubic: {i.ubicacion or '-'}"
+                        f"  [{i['id']}]"
+                        f"  Prod: {i['id_producto']}"
+                        f"  |  Suc: {i['id_sucursal']}"
+                        f"  |  Stock: {i['stock_actual']} (mín {i['stock_minimo']})"
+                        f"  |  Ubic: {i.get('ubicacion') or '-'}"
                     )
 
             elif opcion == "2":
                 uid = leer_uuid("  UUID del inventario: ")
                 if uid:
-                    inv = crud.obtener_inventario(uid)
-                    if inv:
-                        print(
-                            f"  [{inv.id}]  Prod: {inv.id_producto}"
-                            f"  |  Suc: {inv.id_sucursal}"
-                            f"  |  Stock: {inv.stock_actual} (mín {inv.stock_minimo})"
-                            f"  |  Ubic: {inv.ubicacion or '-'}"
-                        )
-                    else:
-                        print("  ✘ No encontrado.")
+                    inv = http_client.get(f"/inventarios/{uid}")
+                    print(
+                        f"  [{inv['id']}]  Prod: {inv['id_producto']}"
+                        f"  |  Suc: {inv['id_sucursal']}"
+                        f"  |  Stock: {inv['stock_actual']} (mín {inv['stock_minimo']})"
+                        f"  |  Ubic: {inv.get('ubicacion') or '-'}"
+                    )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "3":
                 id_prod = leer_uuid("  UUID del producto: ")
                 id_suc = leer_uuid("  UUID de la sucursal: ")
                 if id_prod and id_suc:
-                    inv = crud.obtener_inventario_por_producto_sucursal(id_prod, id_suc)
-                    if inv:
+                    # No existe endpoint directo; filtramos los de la sucursal
+                    inventarios = http_client.get(
+                        f"/inventarios/sucursal/{id_suc}", params={"limit": 500}
+                    )
+                    coincidencias = [
+                        i for i in inventarios if i["id_producto"] == str(id_prod)
+                    ]
+                    if coincidencias:
+                        inv = coincidencias[0]
                         print(
-                            f"  [{inv.id}]  Stock: {inv.stock_actual}"
-                            f"  (mín {inv.stock_minimo})"
-                            f"  |  Ubic: {inv.ubicacion or '-'}"
+                            f"  [{inv['id']}]  Stock: {inv['stock_actual']}"
+                            f"  (mín {inv['stock_minimo']})"
+                            f"  |  Ubic: {inv.get('ubicacion') or '-'}"
                         )
                     else:
                         print("  ✘ No existe inventario para esa combinación.")
@@ -748,28 +760,35 @@ def menu_inventario():
             elif opcion == "4":
                 id_suc = leer_uuid("  UUID de la sucursal: ")
                 if id_suc:
-                    inventarios = crud.obtener_inventarios_por_sucursal(id_suc)
+                    inventarios = http_client.get(
+                        f"/inventarios/sucursal/{id_suc}", params={"limit": 200}
+                    )
                     if not inventarios:
                         print("  Sin registros.")
                     for i in inventarios:
                         print(
-                            f"  [{i.id}]  Prod: {i.id_producto}"
-                            f"  |  Stock: {i.stock_actual} (mín {i.stock_minimo})"
-                            f"  |  Ubic: {i.ubicacion or '-'}"
+                            f"  [{i['id']}]  Prod: {i['id_producto']}"
+                            f"  |  Stock: {i['stock_actual']} (mín {i['stock_minimo']})"
+                            f"  |  Ubic: {i.get('ubicacion') or '-'}"
                         )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "5":
                 id_suc = leer_uuid_opcional(
                     "  UUID de sucursal (opcional, Enter para todas): "
                 )
-                inventarios = crud.obtener_inventarios_bajo_minimo(id_sucursal=id_suc)
+                params = {}
+                if id_suc:
+                    params["id_sucursal"] = str(id_suc)
+                inventarios = http_client.get("/inventarios/bajo-minimo", params=params)
                 if not inventarios:
                     print("  ✔ Ningún producto bajo el mínimo.")
                 for i in inventarios:
                     print(
-                        f"  [{i.id}]  Prod: {i.id_producto}"
-                        f"  |  Suc: {i.id_sucursal}"
-                        f"  |  Stock: {i.stock_actual} / Mín: {i.stock_minimo}"
+                        f"  [{i['id']}]  Prod: {i['id_producto']}"
+                        f"  |  Suc: {i['id_sucursal']}"
+                        f"  |  Stock: {i['stock_actual']} / Mín: {i['stock_minimo']}"
                     )
 
             elif opcion == "6":
@@ -781,14 +800,17 @@ def menu_inventario():
                     stock_str = input("  Stock inicial (Enter = 0): ").strip() or "0"
                     minimo_str = input("  Stock mínimo (Enter = 0): ").strip() or "0"
                     ubicacion = input("  Ubicación (opcional): ").strip() or None
-                    inv = crud.crear_inventario(
-                        id_producto=id_prod,
-                        id_sucursal=id_suc,
-                        stock_actual=int(stock_str),
-                        stock_minimo=int(minimo_str),
-                        ubicacion=ubicacion,
+                    inv = http_client.post(
+                        "/inventarios/",
+                        {
+                            "id_producto": str(id_prod),
+                            "id_sucursal": str(id_suc),
+                            "stock_actual": int(stock_str),
+                            "stock_minimo": int(minimo_str),
+                            "ubicacion": ubicacion,
+                        },
                     )
-                    print(f"  ✔ Inventario creado — ID: {inv.id}")
+                    print(f"  ✔ Inventario creado — ID: {inv['id']}")
 
             elif opcion == "7":
                 uid = leer_uuid("  UUID del inventario: ")
@@ -796,11 +818,11 @@ def menu_inventario():
                     cant_str = input(
                         "  Cantidad a ajustar (positivo suma, negativo resta): "
                     ).strip()
-                    inv = crud.ajustar_stock(uid, int(cant_str))
-                    if inv:
-                        print(f"  ✔ Stock actualizado: {inv.stock_actual}")
-                    else:
-                        print("  ✘ Inventario no encontrado.")
+                    inv = http_client.patch(
+                        f"/inventarios/{uid}/ajustar-stock",
+                        params={"cantidad": int(cant_str)},
+                    )
+                    print(f"  ✔ Stock actualizado: {inv['stock_actual']}")
                 else:
                     print("  Operación cancelada.")
 
@@ -820,16 +842,16 @@ def menu_inventario():
                     if v:
                         campos["ubicacion"] = v
                     if campos:
-                        inv = crud.actualizar_inventario(uid, **campos)
-                        print("  ✔ Actualizado." if inv else "  ✘ No encontrado.")
+                        http_client.put(f"/inventarios/{uid}", campos)
+                        print("  ✔ Actualizado.")
                     else:
                         print("  Sin cambios.")
 
             elif opcion == "9":
                 uid = leer_uuid("  UUID del inventario a desactivar: ")
                 if uid:
-                    ok = crud.eliminar_inventario(uid)
-                    print("  ✔ Desactivado." if ok else "  ✘ No encontrado.")
+                    http_client.delete(f"/inventarios/{uid}")
+                    print("  ✔ Desactivado.")
                 else:
                     print("  Operación cancelada.")
 
@@ -838,8 +860,10 @@ def menu_inventario():
 
         except (ValueError, TypeError) as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except RuntimeError as e:
+            print(f"  ✘ Error: {e}")
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -851,7 +875,7 @@ def menu_compras_proveedor():
         print("  1. Listar compras")
         print("  2. Buscar compra por ID")
         print("  3. Listar compras de un proveedor")
-        print("  4. Crear compra")
+        print("  4. Crear compra (con detalles)")
         print("  5. Cambiar estado de compra")
         print("  6. Anular compra")
         print("  7. Ver detalles de una compra")
@@ -863,49 +887,51 @@ def menu_compras_proveedor():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = CompraProveedorCRUD(db)
         try:
             if opcion == "1":
-                compras = crud.obtener_compras()
+                compras = http_client.get("/compras-proveedor/", params={"limit": 200})
                 if not compras:
                     print("  Sin registros.")
                 for c in compras:
                     print(
-                        f"  [{c.id}]"
-                        f"  Prov: {c.id_proveedor}"
-                        f"  |  Estado: {c.estado}"
-                        f"  |  Total: ${c.total_compra}"
-                        f"  |  Suc: {c.id_sucursal or '-'}"
+                        f"  [{c['id']}]"
+                        f"  Prov: {c['id_proveedor']}"
+                        f"  |  Estado: {c['estado']}"
+                        f"  |  Total: ${c['total_compra']}"
+                        f"  |  Suc: {c.get('id_sucursal') or '-'}"
                     )
 
             elif opcion == "2":
                 uid = leer_uuid("  UUID de la compra: ")
                 if uid:
-                    c = crud.obtener_compra(uid)
-                    if c:
-                        print(
-                            f"  [{c.id}]  Prov: {c.id_proveedor}"
-                            f"  |  Estado: {c.estado}"
-                            f"  |  Total: ${c.total_compra}"
-                            f"  |  Fecha: {c.fecha}"
-                            f"  |  Suc: {c.id_sucursal or '-'}"
-                        )
-                    else:
-                        print("  ✘ No encontrada.")
+                    c = http_client.get(f"/compras-proveedor/{uid}")
+                    print(
+                        f"  [{c['id']}]  Prov: {c['id_proveedor']}"
+                        f"  |  Estado: {c['estado']}"
+                        f"  |  Total: ${c['total_compra']}"
+                        f"  |  Fecha: {c.get('fecha')}"
+                        f"  |  Suc: {c.get('id_sucursal') or '-'}"
+                    )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "3":
                 id_prov = leer_uuid("  UUID del proveedor: ")
                 if id_prov:
-                    compras = crud.obtener_compras_por_proveedor(id_prov)
+                    compras = http_client.get(
+                        f"/compras-proveedor/proveedor/{id_prov}",
+                        params={"limit": 200},
+                    )
                     if not compras:
                         print("  Sin registros.")
                     for c in compras:
                         print(
-                            f"  [{c.id}]  Estado: {c.estado}"
-                            f"  |  Total: ${c.total_compra}"
-                            f"  |  Suc: {c.id_sucursal or '-'}"
+                            f"  [{c['id']}]  Estado: {c['estado']}"
+                            f"  |  Total: ${c['total_compra']}"
+                            f"  |  Suc: {c.get('id_sucursal') or '-'}"
                         )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "4":
                 id_prov = leer_uuid("  UUID del proveedor: ")
@@ -915,55 +941,70 @@ def menu_compras_proveedor():
                     id_suc = leer_uuid_opcional(
                         "  UUID de la sucursal destino (opcional, Enter para omitir): "
                     )
-                    print(
-                        "  Estado inicial: pedida / recibida (Enter = recibida): ",
-                        end="",
+                    detalles = []
+                    print("  Agregar productos (Enter en UUID para terminar):")
+                    while True:
+                        id_prod = leer_uuid_opcional(
+                            "    UUID del producto (Enter para terminar): "
+                        )
+                        if not id_prod:
+                            break
+                        cant_str = input("    Cantidad: ").strip()
+                        precio_str = input("    Precio de compra: ").strip()
+                        try:
+                            detalles.append(
+                                {
+                                    "id_producto": str(id_prod),
+                                    "cantidad": int(cant_str),
+                                    "precio_compra": precio_str,
+                                }
+                            )
+                        except (ValueError, InvalidOperation):
+                            print("    Datos inválidos, se omitirá este detalle.")
+                    c = http_client.post(
+                        "/compras-proveedor/",
+                        {
+                            "id_proveedor": str(id_prov),
+                            "id_sucursal": str(id_suc) if id_suc else None,
+                            "detalles": detalles,
+                        },
                     )
-                    estado = input().strip() or "recibida"
-                    c = crud.crear_compra(
-                        id_proveedor=id_prov,
-                        id_sucursal=id_suc,
-                        estado=estado,
-                    )
-                    print(f"  ✔ Compra creada — ID: {c.id}  Estado: {c.estado}")
+                    print(f"  ✔ Compra creada — ID: {c['id']}  Estado: {c['estado']}")
 
             elif opcion == "5":
                 uid = leer_uuid("  UUID de la compra: ")
                 if uid:
                     print("  Nuevo estado (pedida / recibida / anulada): ", end="")
                     estado = input().strip()
-                    c = crud.actualizar_compra(uid, estado=estado)
-                    if c:
-                        print(f"  ✔ Estado actualizado a: {c.estado}")
-                    else:
-                        print("  ✘ Compra no encontrada.")
+                    c = http_client.put(f"/compras-proveedor/{uid}", {"estado": estado})
+                    print(f"  ✔ Estado actualizado a: {c['estado']}")
                 else:
                     print("  Operación cancelada.")
 
             elif opcion == "6":
                 uid = leer_uuid("  UUID de la compra a anular: ")
                 if uid:
-                    c = crud.anular_compra(uid)
-                    if c:
-                        print(f"  ✔ Compra anulada. Stock revertido si aplica.")
-                    else:
-                        print("  ✘ Compra no encontrada.")
+                    http_client.patch(f"/compras-proveedor/{uid}/anular")
+                    print("  ✔ Compra anulada. Stock revertido si aplica.")
                 else:
                     print("  Operación cancelada.")
 
             elif opcion == "7":
                 uid = leer_uuid("  UUID de la compra: ")
                 if uid:
-                    detalles = crud.obtener_detalles_por_compra(uid)
+                    detalles = http_client.get(f"/compras-proveedor/{uid}/detalles")
                     if not detalles:
                         print("  Sin detalles registrados.")
                     for d in detalles:
+                        subtotal = Decimal(str(d["precio_compra"])) * d["cantidad"]
                         print(
-                            f"  [{d.id}]  Prod: {d.id_producto}"
-                            f"  |  Cant: {d.cantidad}"
-                            f"  |  P.Compra: ${d.precio_compra}"
-                            f"  |  Sub: ${Decimal(str(d.precio_compra)) * d.cantidad}"
+                            f"  [{d['id']}]  Prod: {d['id_producto']}"
+                            f"  |  Cant: {d['cantidad']}"
+                            f"  |  P.Compra: ${d['precio_compra']}"
+                            f"  |  Sub: ${subtotal}"
                         )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "8":
                 id_compra = leer_uuid("  UUID de la compra: ")
@@ -977,25 +1018,23 @@ def menu_compras_proveedor():
                         cant_str = input("  Cantidad: ").strip()
                         precio_str = input("  Precio de compra por unidad: ").strip()
                         try:
-                            d = crud.agregar_detalle(
-                                id_compra=id_compra,
-                                id_producto=id_prod,
-                                cantidad=int(cant_str),
-                                precio_compra=Decimal(precio_str),
+                            d = http_client.post(
+                                f"/compras-proveedor/{id_compra}/detalles",
+                                {
+                                    "id_producto": str(id_prod),
+                                    "cantidad": int(cant_str),
+                                    "precio_compra": precio_str,
+                                },
                             )
-                            print(f"  ✔ Detalle agregado — ID: {d.id}")
+                            print(f"  ✔ Detalle agregado — ID: {d['id']}")
                         except InvalidOperation:
                             print("  ✘ Precio inválido.")
 
             elif opcion == "9":
                 uid = leer_uuid("  UUID del detalle a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_detalle(uid)
-                    print(
-                        "  ✔ Detalle eliminado. Stock ajustado si aplica."
-                        if ok
-                        else "  ✘ Detalle no encontrado."
-                    )
+                    http_client.delete(f"/compras-proveedor/detalles/{uid}")
+                    print("  ✔ Detalle eliminado. Stock ajustado si aplica.")
                 else:
                     print("  Operación cancelada.")
 
@@ -1004,186 +1043,173 @@ def menu_compras_proveedor():
 
         except (ValueError, TypeError) as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except RuntimeError as e:
+            print(f"  ✘ Error: {e}")
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
 
 def menu_facturas():
-    """Submenú de gestión de facturas."""
+    """Submenú de gestión de facturas y sus detalles."""
     while True:
         separador("FACTURAS")
         print("  1. Listar facturas")
         print("  2. Buscar factura por ID")
         print("  3. Listar facturas de un cliente")
-        print("  4. Crear factura")
+        print("  4. Crear factura (con detalles)")
         print("  5. Actualizar estado de factura")
         print("  6. Anular factura")
+        print("  7. Ver detalles de una factura")
+        print("  8. Buscar detalle por ID")
+        print("  9. Agregar detalle a factura")
+        print("  10. Eliminar detalle")
         print("  0. Volver")
         opcion = input("Opción: ").strip()
 
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = FacturaCRUD(db)
         try:
             if opcion == "1":
-                facturas = crud.obtener_facturas()
+                facturas = http_client.get("/facturas/", params={"limit": 200})
                 if not facturas:
                     print("  Sin registros.")
                 for f in facturas:
                     print(
-                        f"  [{f.id}]"
-                        f"  Cliente: {f.id_cliente}"
-                        f"  |  Estado: {f.estado}"
-                        f"  |  Total: ${f.total}"
-                        f"  |  Suc: {f.id_sucursal or '-'}"
+                        f"  [{f['id']}]"
+                        f"  Cliente: {f['id_cliente']}"
+                        f"  |  Estado: {f['estado']}"
+                        f"  |  Total: ${f['total']}"
+                        f"  |  Suc: {f.get('id_sucursal') or '-'}"
                     )
 
             elif opcion == "2":
                 uid = leer_uuid("  UUID de la factura: ")
                 if uid:
-                    f = crud.obtener_factura(uid)
-                    if f:
-                        print(
-                            f"  [{f.id}]  Cliente: {f.id_cliente}"
-                            f"  |  Emp: {f.id_empleado}"
-                            f"  |  Estado: {f.estado}"
-                            f"  |  Total: ${f.total}"
-                            f"  |  Pago: {f.metodo_pago or '-'}"
-                            f"  |  Fecha: {f.fecha_creacion}"
-                        )
-                    else:
-                        print("  ✘ No encontrada.")
+                    f = http_client.get(f"/facturas/{uid}")
+                    print(
+                        f"  [{f['id']}]  Cliente: {f['id_cliente']}"
+                        f"  |  Emp: {f['id_empleado']}"
+                        f"  |  Estado: {f['estado']}"
+                        f"  |  Total: ${f['total']}"
+                        f"  |  Pago: {f.get('metodo_pago') or '-'}"
+                        f"  |  Fecha: {f.get('fecha_creacion')}"
+                    )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "3":
                 id_cliente = leer_uuid("  UUID del cliente: ")
                 if id_cliente:
-                    facturas = crud.obtener_facturas_por_cliente(id_cliente)
+                    facturas = http_client.get(
+                        f"/facturas/cliente/{id_cliente}", params={"limit": 200}
+                    )
                     if not facturas:
                         print("  Sin registros.")
                     for f in facturas:
                         print(
-                            f"  [{f.id}]  Estado: {f.estado}"
-                            f"  |  Total: ${f.total}"
-                            f"  |  Suc: {f.id_sucursal or '-'}"
+                            f"  [{f['id']}]  Estado: {f['estado']}"
+                            f"  |  Total: ${f['total']}"
+                            f"  |  Suc: {f.get('id_sucursal') or '-'}"
                         )
+                else:
+                    print("  Operación cancelada.")
 
             elif opcion == "4":
                 id_cliente = leer_uuid("  UUID del cliente: ")
                 id_empleado = leer_uuid("  UUID del empleado: ")
                 id_sucursal = leer_uuid("  UUID de la sucursal: ")
-
                 if not id_cliente or not id_empleado or not id_sucursal:
                     print("  Operación cancelada. Faltan IDs requeridos.")
                 else:
                     pago = (
                         input("  Método de pago (Enter para omitir): ").strip() or None
                     )
-                    print(
-                        "  Estado inicial: emitida / pendiente (Enter = emitida): ",
-                        end="",
+                    detalles = []
+                    print("  Agregar productos (Enter en UUID para terminar):")
+                    while True:
+                        id_prod = leer_uuid_opcional(
+                            "    UUID del producto (Enter para terminar): "
+                        )
+                        if not id_prod:
+                            break
+                        cant_str = input("    Cantidad: ").strip()
+                        precio_str = input("    Precio unitario: ").strip()
+                        try:
+                            detalles.append(
+                                {
+                                    "id_producto": str(id_prod),
+                                    "cantidad": int(cant_str),
+                                    "precio_unitario": precio_str,
+                                }
+                            )
+                        except (ValueError, InvalidOperation):
+                            print("    Datos inválidos, se omitirá este detalle.")
+                    f = http_client.post(
+                        "/facturas/",
+                        {
+                            "id_cliente": str(id_cliente),
+                            "id_empleado": str(id_empleado),
+                            "id_sucursal": str(id_sucursal),
+                            "metodo_pago": pago,
+                            "detalles": detalles,
+                        },
                     )
-                    estado = input().strip() or "emitida"
-                    f = crud.crear_factura(
-                        id_cliente=id_cliente,
-                        id_empleado=id_empleado,
-                        id_sucursal=id_sucursal,
-                        metodo_pago=pago,
-                        estado=estado,
-                    )
-                    print(f"  ✔ Factura creada — ID: {f.id}  Estado: {f.estado}")
+                    print(f"  ✔ Factura creada — ID: {f['id']}  Total: ${f['total']}")
 
             elif opcion == "5":
                 uid = leer_uuid("  UUID de la factura: ")
                 if uid:
                     print("  Nuevo estado (emitida / pendiente / anulada): ", end="")
                     estado = input().strip()
-                    f = crud.actualizar_factura(uid, estado=estado)
-                    if f:
-                        print(f"  ✔ Estado actualizado a: {f.estado}")
-                    else:
-                        print("  ✘ Factura no encontrada.")
+                    f = http_client.put(f"/facturas/{uid}", {"estado": estado})
+                    print(f"  ✔ Estado actualizado a: {f['estado']}")
                 else:
                     print("  Operación cancelada.")
 
             elif opcion == "6":
                 uid = leer_uuid("  UUID de la factura a anular: ")
                 if uid:
-                    f = crud.anular_factura(uid)
-                    if f:
-                        print(f"  ✔ Factura anulada.")
-                    else:
-                        print("  ✘ Factura no encontrada.")
+                    http_client.patch(f"/facturas/{uid}/anular")
+                    print("  ✔ Factura anulada.")
                 else:
                     print("  Operación cancelada.")
-            else:
-                print("  Opción inválida.")
 
-        except (ValueError, TypeError) as e:
-            print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
-
-        pausar()
-
-
-def menu_detalle_factura():
-    """Submenú de gestión de detalles de factura."""
-    while True:
-        separador("DETALLE FACTURA")
-        print("  1. Ver detalles de una factura")
-        print("  2. Buscar detalle por ID")
-        print("  3. Agregar detalle a factura")
-        print("  4. Eliminar detalle")
-        print("  0. Volver")
-        opcion = input("Opción: ").strip()
-
-        if opcion == "0":
-            break
-
-        db = SessionLocal()
-        crud = FacturaCRUD(db)
-        try:
-            if opcion == "1":
-                id_factura = leer_uuid("  UUID de la factura: ")
-                if not id_factura:
-                    print("  Operación cancelada.")
-                else:
-                    detalles = crud.obtener_detalles_por_factura(id_factura)
+            elif opcion == "7":
+                uid = leer_uuid("  UUID de la factura: ")
+                if uid:
+                    detalles = http_client.get(f"/facturas/{uid}/detalles")
                     if not detalles:
-                        print("  Sin detalles registrados para esa factura.")
+                        print("  Sin detalles registrados.")
                     for d in detalles:
                         print(
-                            f"  [{d.id}]"
-                            f"  Prod: {d.id_producto}"
-                            f"  |  Cant: {d.cantidad}"
-                            f"  |  P.Unit: ${d.precio_unitario}"
-                            f"  |  Sub: ${d.subtotal}"
+                            f"  [{d['id']}]"
+                            f"  Prod: {d['id_producto']}"
+                            f"  |  Cant: {d['cantidad']}"
+                            f"  |  P.Unit: ${d['precio_unitario']}"
+                            f"  |  Sub: ${d['subtotal']}"
                         )
-
-            elif opcion == "2":
-                uid = leer_uuid("  UUID del detalle: ")
-                if uid:
-                    d = crud.obtener_detalle(uid)
-                    if d:
-                        print(
-                            f"  [{d.id}]"
-                            f"  Factura: {d.id_factura}"
-                            f"  |  Prod: {d.id_producto}"
-                            f"  |  Cant: {d.cantidad}"
-                            f"  |  P.Unit: ${d.precio_unitario}"
-                            f"  |  Sub: ${d.subtotal}"
-                            f"  |  Fecha: {d.fecha_creacion}"
-                        )
-                    else:
-                        print("  ✘ Detalle no encontrado.")
                 else:
                     print("  Operación cancelada.")
 
-            elif opcion == "3":
+            elif opcion == "8":
+                uid = leer_uuid("  UUID del detalle: ")
+                if uid:
+                    d = http_client.get(f"/facturas/detalles/{uid}")
+                    print(
+                        f"  [{d['id']}]"
+                        f"  Factura: {d['id_factura']}"
+                        f"  |  Prod: {d['id_producto']}"
+                        f"  |  Cant: {d['cantidad']}"
+                        f"  |  P.Unit: ${d['precio_unitario']}"
+                        f"  |  Sub: ${d['subtotal']}"
+                    )
+                else:
+                    print("  Operación cancelada.")
+
+            elif opcion == "9":
                 id_factura = leer_uuid("  UUID de la factura: ")
                 if not id_factura:
                     print("  Operación cancelada.")
@@ -1195,28 +1221,26 @@ def menu_detalle_factura():
                         cant_str = input("  Cantidad: ").strip()
                         precio_str = input("  Precio unitario: ").strip()
                         try:
-                            d = crud.agregar_detalle(
-                                id_factura=id_factura,
-                                id_producto=id_prod,
-                                cantidad=int(cant_str),
-                                precio_unitario=Decimal(precio_str),
+                            d = http_client.post(
+                                f"/facturas/{id_factura}/detalles",
+                                {
+                                    "id_producto": str(id_prod),
+                                    "cantidad": int(cant_str),
+                                    "precio_unitario": precio_str,
+                                },
                             )
                             print(
-                                f"  ✔ Detalle agregado — ID: {d.id}"
-                                f"  |  Subtotal: ${d.subtotal}"
+                                f"  ✔ Detalle agregado — ID: {d['id']}"
+                                f"  |  Subtotal: ${d['subtotal']}"
                             )
                         except InvalidOperation:
                             print("  ✘ Precio inválido.")
 
-            elif opcion == "4":
+            elif opcion == "10":
                 uid = leer_uuid("  UUID del detalle a eliminar: ")
                 if uid:
-                    ok = crud.eliminar_detalle(uid)
-                    print(
-                        "  ✔ Detalle eliminado. Total de factura actualizado."
-                        if ok
-                        else "  ✘ Detalle no encontrado."
-                    )
+                    http_client.delete(f"/facturas/detalles/{uid}")
+                    print("  ✔ Detalle eliminado. Total de factura actualizado.")
                 else:
                     print("  Operación cancelada.")
 
@@ -1225,8 +1249,10 @@ def menu_detalle_factura():
 
         except (ValueError, TypeError) as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except RuntimeError as e:
+            print(f"  ✘ Error: {e}")
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -1245,19 +1271,17 @@ def menu_roles():
         if opcion == "0":
             break
 
-        db = SessionLocal()
-        crud = RolCRUD(db)
         try:
             if opcion == "1":
-                roles = crud.obtener_roles()
+                roles = http_client.get("/roles/", params={"limit": 200})
                 if not roles:
                     print("  Sin registros.")
                 for r in roles:
-                    estado = "Activo" if r.activo else "Inactivo"
+                    estado = "Activo" if r.get("activo") else "Inactivo"
                     print(
-                        f"  [{r.id}]  {r.nombre}"
+                        f"  [{r['id']}]  {r['nombre']}"
                         f"  |  Estado: {estado}"
-                        f"  |  Salario Base: ${r.salario or '0.00'}"
+                        f"  |  Salario Base: ${r.get('salario') or '0.00'}"
                     )
 
             elif opcion == "2":
@@ -1276,8 +1300,15 @@ def menu_roles():
                         except ValueError:
                             print("  Salario inválido, se guardará como Nulo.")
 
-                    r = crud.crear_rol(nombre, descripcion, salario)
-                    print(f"  ✔ Rol creado — ID: {r.id}")
+                    r = http_client.post(
+                        "/roles/",
+                        {
+                            "nombre": nombre,
+                            "descripcion": descripcion,
+                            "salario": salario,
+                        },
+                    )
+                    print(f"  ✔ Rol creado — ID: {r['id']}")
 
             elif opcion == "3":
                 uid = leer_uuid("  UUID del rol a actualizar: ")
@@ -1302,11 +1333,8 @@ def menu_roles():
                         campos["activo"] = False
 
                     if campos:
-                        r = crud.actualizar_rol(uid, **campos)
-                        if r:
-                            print("  ✔ Rol actualizado.")
-                        else:
-                            print("  ✘ Rol no encontrado.")
+                        http_client.put(f"/roles/{uid}", campos)
+                        print("  ✔ Rol actualizado.")
                     else:
                         print("  Sin cambios.")
                 else:
@@ -1315,11 +1343,8 @@ def menu_roles():
             elif opcion == "4":
                 uid = leer_uuid("  UUID del rol a desactivar: ")
                 if uid:
-                    ok = crud.eliminar_rol(uid)
-                    if ok:
-                        print("  ✔ Rol desactivado.")
-                    else:
-                        print("  ✘ Rol no encontrado.")
+                    http_client.delete(f"/roles/{uid}")
+                    print("  ✔ Rol desactivado.")
                 else:
                     print("  Operación cancelada.")
 
@@ -1328,8 +1353,10 @@ def menu_roles():
 
         except (ValueError, TypeError) as e:
             print(f"  ✘ Error: {e}")
-        finally:
-            db.close()
+        except RuntimeError as e:
+            print(f"  ✘ Error: {e}")
+        except Exception as e:
+            print(f"  ✘ Error inesperado: {e}")
 
         pausar()
 
@@ -1344,9 +1371,8 @@ MENU_OPCIONES = {
     "7": ("Empleados", menu_empleados),
     "8": ("Inventario", menu_inventario),
     "9": ("Compras Proveedor", menu_compras_proveedor),
-    "10": ("Detalle Factura", menu_detalle_factura),
-    "11": ("Facturas Generales", menu_facturas),
-    "12": ("Roles", menu_roles),
+    "10": ("Facturas", menu_facturas),
+    "11": ("Roles", menu_roles),
 }
 
 
@@ -1359,7 +1385,7 @@ def iniciar_menu():
         print("╠══════════════════════════════════════════╣")
         for k, (label, _) in MENU_OPCIONES.items():
             print(f"║  {k}. {label:<37}║")
-        print("║  13. Iniciar servidor FastAPI (API REST) ║")
+        print("║  12. Iniciar servidor FastAPI (API REST) ║")
         print("║  0. Salir                                ║")
         print("╚══════════════════════════════════════════╝")
 
@@ -1368,7 +1394,7 @@ def iniciar_menu():
         if opcion in MENU_OPCIONES:
             _, fn = MENU_OPCIONES[opcion]
             fn()
-        elif opcion == "13":
+        elif opcion == "12":
             import uvicorn
 
             print("\nIniciando servidor en http://localhost:8000 ...")
