@@ -11,7 +11,7 @@ from models import EmpleadoCreate, EmpleadoRead, EmpleadoUpdate
 router = APIRouter()
 
 
-@router.post("/", response_model=EmpleadoRead)
+@router.post("/", response_model=EmpleadoRead, status_code=201)
 def create(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
     crud = EmpleadoCRUD(db)
     try:

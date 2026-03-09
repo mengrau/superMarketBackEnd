@@ -9,7 +9,7 @@ from entities.usuario import Usuario
 router = APIRouter()
 
 
-@router.post("/", response_model=UsuarioRead)
+@router.post("/", response_model=UsuarioRead, status_code=201)
 def create(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     crud = UsuarioCRUD(db)
     total_usuarios = db.query(Usuario).count()

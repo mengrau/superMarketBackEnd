@@ -10,7 +10,7 @@ from crud.producto_crud import ProductoCRUD
 router = APIRouter()
 
 
-@router.post("/", response_model=ProductoRead)
+@router.post("/", response_model=ProductoRead, status_code=201)
 def create(producto: ProductoCreate, db: Session = Depends(get_db)):
     crud = ProductoCRUD(db)
     try:

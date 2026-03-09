@@ -17,7 +17,7 @@ from models import (
 router = APIRouter()
 
 
-@router.post("/", response_model=CompraProveedorRead)
+@router.post("/", response_model=CompraProveedorRead, status_code=201)
 def create(compra: CompraProveedorCreate, db: Session = Depends(get_db)):
     crud = CompraProveedorCRUD(db)
     try:

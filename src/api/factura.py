@@ -17,7 +17,7 @@ from models import (
 router = APIRouter()
 
 
-@router.post("/", response_model=FacturaRead)
+@router.post("/", response_model=FacturaRead, status_code=201)
 def create(factura: FacturaCreate, db: Session = Depends(get_db)):
     crud = FacturaCRUD(db)
     try:
@@ -104,7 +104,9 @@ def anular(factura_id: UUID, db: Session = Depends(get_db)):
     return factura
 
 
-@router.post("/{factura_id}/detalles", response_model=DetalleFacturaRead)
+@router.post(
+    "/{factura_id}/detalles", response_model=DetalleFacturaRead, status_code=201
+)
 def add_detalle(
     factura_id: UUID, detalle: DetalleFacturaCreate, db: Session = Depends(get_db)
 ):
