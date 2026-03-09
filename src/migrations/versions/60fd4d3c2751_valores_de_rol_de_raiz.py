@@ -18,12 +18,14 @@ depends_on = None
 
 
 def upgrade():
-    op.execute(f"""
+    op.execute(
+        f"""
         INSERT INTO roles (id, nombre, descripcion, salario, activo, fecha_creacion)
         VALUES
             ('{uuid.uuid4()}', 'admin', 'Administrador del sistema', 2000000, TRUE, now()),
             ('{uuid.uuid4()}', 'empleado', 'Empleado general', 2000000, TRUE, now())
-        """)
+        """
+    )
 
 
 def downgrade():

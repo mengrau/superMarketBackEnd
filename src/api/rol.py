@@ -15,7 +15,7 @@ from models import (
 router = APIRouter()
 
 
-@router.post("/", response_model=RolRead)
+@router.post("/", response_model=RolRead, status_code=201)
 def create(rol: RolCreate, db: Session = Depends(get_db)):
     """Crea un nuevo rol en el sistema."""
     crud = RolCRUD(db)

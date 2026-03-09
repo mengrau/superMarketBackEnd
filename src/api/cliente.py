@@ -10,7 +10,7 @@ from crud.cliente_crud import ClienteCRUD
 router = APIRouter()
 
 
-@router.post("/", response_model=ClienteRead)
+@router.post("/", response_model=ClienteRead, status_code=201)
 def create(cliente: ClienteCreate, db: Session = Depends(get_db)):
     crud = ClienteCRUD(db)
     try:

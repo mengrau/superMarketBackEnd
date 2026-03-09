@@ -10,7 +10,7 @@ from crud.proveedor_crud import ProveedorCRUD
 router = APIRouter()
 
 
-@router.post("/", response_model=ProveedorRead)
+@router.post("/", response_model=ProveedorRead, status_code=201)
 def create(proveedor: ProveedorCreate, db: Session = Depends(get_db)):
     crud = ProveedorCRUD(db)
     try:

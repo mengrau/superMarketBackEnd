@@ -10,7 +10,7 @@ from crud.sucursal_crud import SucursalCRUD
 router = APIRouter()
 
 
-@router.post("/", response_model=SucursalRead)
+@router.post("/", response_model=SucursalRead, status_code=201)
 def create(sucursal: SucursalCreate, db: Session = Depends(get_db)):
     crud = SucursalCRUD(db)
     try:
