@@ -147,17 +147,17 @@ class CompraProveedorCRUD:
             if hasattr(compra, key):
                 setattr(compra, key, value)
 
-        # Actualizar stock según la transición de estado
+        """Actualizar stock según la transición de estado"""
         if compra.id_sucursal and estado_anterior != nuevo_estado:
             detalles = self.obtener_detalles_por_compra(compra.id)
             if estado_anterior == "pedida" and nuevo_estado == "recibida":
-                # Confirmar recepción: sumar stock
+                """Confirmar recepción: sumar stock"""
                 for det in detalles:
                     self._ajustar_inventario(
                         det.id_producto, compra.id_sucursal, det.cantidad
                     )
             elif estado_anterior == "recibida" and nuevo_estado == "anulada":
-                # Anular compra ya recibida: revertir stock
+                """Anular compra ya recibida: revertir stock"""
                 for det in detalles:
                     self._ajustar_inventario(
                         det.id_producto, compra.id_sucursal, -det.cantidad
@@ -218,7 +218,7 @@ class CompraProveedorCRUD:
         subtotal = Decimal(str(precio_compra)) * cantidad
         compra.total_compra = Decimal(str(compra.total_compra or 0)) + subtotal
 
-        # Actualizar inventario si la compra ya está recibida
+        """Actualizar inventario si la compra ya está recibida"""
         if compra.estado == "recibida" and compra.id_sucursal:
             self._ajustar_inventario(id_producto, compra.id_sucursal, cantidad)
 
@@ -259,7 +259,7 @@ class CompraProveedorCRUD:
                 Decimal("0"),
                 Decimal(str(compra.total_compra or 0)) - subtotal,
             )
-            # Revertir stock si la compra estaba recibida
+            """Revertir stock si la compra estaba recibida"""
             if compra.estado == "recibida" and compra.id_sucursal:
                 self._ajustar_inventario(
                     detalle.id_producto, compra.id_sucursal, -detalle.cantidad
