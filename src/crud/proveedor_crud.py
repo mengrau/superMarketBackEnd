@@ -80,7 +80,7 @@ class ProveedorCRUD:
             self.db.query(Proveedor)
             .filter(
                 Proveedor.nit == (nit or "").strip(),
-                Proveedor.estado == True,
+                Proveedor.estado,
             )
             .first()
         )
@@ -98,7 +98,7 @@ class ProveedorCRUD:
         """
         query = self.db.query(Proveedor)
         if solo_activos:
-            query = query.filter(Proveedor.estado == True)
+            query = query.filter(Proveedor.estado)
         return query.offset(skip).limit(limit).all()
 
     def actualizar_proveedor(

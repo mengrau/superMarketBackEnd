@@ -59,7 +59,7 @@ class TipoProductoCRUD:
             self.db.query(TipoProducto)
             .filter(
                 TipoProducto.nombre.ilike((nombre or "").strip()),
-                TipoProducto.estado == True,
+                TipoProducto.estado,
             )
             .first()
         )
@@ -77,7 +77,7 @@ class TipoProductoCRUD:
         """
         query = self.db.query(TipoProducto)
         if solo_activos:
-            query = query.filter(TipoProducto.estado == True)
+            query = query.filter(TipoProducto.estado)
         return query.offset(skip).limit(limit).all()
 
     def actualizar_tipo_producto(

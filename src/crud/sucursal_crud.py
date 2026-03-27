@@ -68,7 +68,7 @@ class SucursalCRUD:
             self.db.query(Sucursal)
             .filter(
                 Sucursal.nombre.ilike((nombre or "").strip()),
-                Sucursal.estado == True,
+                Sucursal.estado,
             )
             .first()
         )
@@ -86,7 +86,7 @@ class SucursalCRUD:
         """
         query = self.db.query(Sucursal)
         if solo_activas:
-            query = query.filter(Sucursal.estado == True)
+            query = query.filter(Sucursal.estado)
         return query.offset(skip).limit(limit).all()
 
     def actualizar_sucursal(
