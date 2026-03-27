@@ -4,7 +4,6 @@ Registra todos los routers de FastAPI, configura CORS, crea las tablas en el
 arranque e inicia el menú de consola cuando se ejecuta directamente.
 """
 
-import uvicorn
 from api import cliente
 from api import compra_proveedor
 from api import empleado

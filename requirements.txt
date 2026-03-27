@@ -1,24 +1,25 @@
 # Core ORM and Database
-SQLAlchemy==2.0.23
-alembic==1.12.1
+SQLAlchemy==2.0.43
+alembic==1.16.5
 
 # Database Driver (PostgreSQL)
-psycopg2-binary==2.9.11  
+psycopg2-binary==2.9.11
 
 # Data Validation and Serialization
-pydantic==2.9.2
-pydantic-settings==2.3.0
-email-validator==2.1.0
+pydantic==2.11.10
+pydantic-settings==2.10.1
+email-validator==2.3.0
 
 # Additional Utilities
-python-dotenv==1.0.0     # Environment variables
-typing-extensions==4.12.2  # Type hints support
+python-dotenv==1.1.1  # Environment variables
+typing-extensions==4.15.0  # Type hints support
 passlib==1.7.4
-bcrypt==4.0.1
+bcrypt==5.0.0
 
-#Apis utilities
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-requests==2.31.0
+# APIs utilities
+fastapi==0.135.2
+uvicorn[standard]==0.38.0
+python-multipart==0.0.22
+requests==2.33.0
+httpx==0.28.1
 

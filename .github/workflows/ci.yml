@@ -72,7 +72,7 @@ jobs:
         run: ruff format src --check
 
       - name: Verificar vulnerabilidades (pip-audit)
-        run: pip-audit
+        run: pip-audit -r requirements.txt
 
       - name: Pruebas (pytest)
         run: pytest -q
