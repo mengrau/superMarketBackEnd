@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+SSL_MODE = os.getenv("SSL_MODE", "require")
 
 if not DATABASE_URL:
     raise ValueError("Se requiere DATABASE_URL en las variables de entorno")
@@ -21,7 +22,7 @@ engine = create_engine(
     echo=False,
     pool_pre_ping=True,
     pool_recycle=300,
-    connect_args={"sslmode": "require"},
+    connect_args={"sslmode": SSL_MODE},
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

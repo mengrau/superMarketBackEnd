@@ -96,7 +96,7 @@ class InventarioCRUD:
         """Lista todos los registros de inventario con paginación."""
         query = self.db.query(Inventario)
         if solo_activos:
-            query = query.filter(Inventario.estado == True)
+            query = query.filter(Inventario.estado)
         return query.offset(skip).limit(limit).all()
 
     def obtener_inventarios_por_sucursal(
@@ -105,7 +105,7 @@ class InventarioCRUD:
         """Lista el inventario completo de una sucursal."""
         return (
             self.db.query(Inventario)
-            .filter(Inventario.id_sucursal == id_sucursal, Inventario.estado == True)
+            .filter(Inventario.id_sucursal == id_sucursal, Inventario.estado)
             .offset(skip)
             .limit(limit)
             .all()
@@ -122,7 +122,7 @@ class InventarioCRUD:
         """
         query = self.db.query(Inventario).filter(
             Inventario.stock_actual < Inventario.stock_minimo,
-            Inventario.estado == True,
+            Inventario.estado,
         )
         if id_sucursal:
             query = query.filter(Inventario.id_sucursal == id_sucursal)

@@ -96,7 +96,7 @@ class EmpleadoCRUD:
     ) -> List[Empleado]:
         query = self.db.query(Empleado)
         if solo_activos:
-            query = query.filter(Empleado.estado == True)
+            query = query.filter(Empleado.estado)
         return query.offset(skip).limit(limit).all()
 
     def actualizar_empleado(

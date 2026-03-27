@@ -509,7 +509,7 @@ def menu_usuarios():
                 if not usuarios:
                     print("  Sin registros.")
                 for u in usuarios:
-                    print(f"  [{u['id']}]  {u['username']}" f"  |  Rol: {u['id_rol']}")
+                    print(f"  [{u['id']}]  {u['username']}  |  Rol: {u['id_rol']}")
 
             elif opcion == "2":
                 username = input("  Username: ").strip()
