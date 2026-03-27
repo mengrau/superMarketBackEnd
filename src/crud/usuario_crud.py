@@ -1,4 +1,4 @@
-﻿"""
+"""
 Operaciones CRUD y utilidades para la entidad Usuario.
 
 Incluye creacion, consulta, actualizacion, eliminacion y autenticacion,
@@ -54,7 +54,7 @@ class UsuarioCRUD:
             self.db.query(Usuario)
             .filter(
                 Usuario.username.ilike(username.strip()),
-                Usuario.estado == True,
+                Usuario.estado,
             )
             .first()
         ):
@@ -101,7 +101,7 @@ class UsuarioCRUD:
         """
         query = self.db.query(Usuario)
         if solo_activos:
-            query = query.filter(Usuario.estado == True)
+            query = query.filter(Usuario.estado)
         return query.offset(skip).limit(limit).all()
 
     def obtener_usuarios_por_rol(
@@ -110,7 +110,7 @@ class UsuarioCRUD:
         """Lista usuarios que tienen un rol especifico."""
         return (
             self.db.query(Usuario)
-            .filter(Usuario.id_rol == id_rol, Usuario.estado == True)
+            .filter(Usuario.id_rol == id_rol, Usuario.estado)
             .offset(skip)
             .limit(limit)
             .all()

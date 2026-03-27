@@ -10,7 +10,7 @@ from alembic import context
 from database.config import Base
 from database.config import DATABASE_URL
 
-import entities
+import entities  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)

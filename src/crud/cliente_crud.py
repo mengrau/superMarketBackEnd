@@ -91,7 +91,7 @@ class ClienteCRUD:
             self.db.query(Cliente)
             .filter(
                 Cliente.identificacion == (identificacion or "").strip(),
-                Cliente.estado == True,
+                Cliente.estado,
             )
             .first()
         )
@@ -109,7 +109,7 @@ class ClienteCRUD:
         """
         query = self.db.query(Cliente)
         if solo_activos:
-            query = query.filter(Cliente.estado == True)
+            query = query.filter(Cliente.estado)
         return query.offset(skip).limit(limit).all()
 
     def actualizar_cliente(

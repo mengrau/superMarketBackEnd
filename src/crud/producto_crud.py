@@ -88,7 +88,7 @@ class ProductoCRUD:
             self.db.query(Producto)
             .filter(
                 Producto.codigo_barras == (codigo_barras or "").strip(),
-                Producto.estado == True,
+                Producto.estado,
             )
             .first()
         )
@@ -106,7 +106,7 @@ class ProductoCRUD:
         """
         query = self.db.query(Producto)
         if solo_activos:
-            query = query.filter(Producto.estado == True)
+            query = query.filter(Producto.estado)
         return query.offset(skip).limit(limit).all()
 
     def obtener_productos_por_tipo(
@@ -115,7 +115,7 @@ class ProductoCRUD:
         """Lista productos filtrados por tipo de producto."""
         return (
             self.db.query(Producto)
-            .filter(Producto.id_tipo == id_tipo, Producto.estado == True)
+            .filter(Producto.id_tipo == id_tipo, Producto.estado)
             .offset(skip)
             .limit(limit)
             .all()
@@ -127,7 +127,7 @@ class ProductoCRUD:
         """Lista productos filtrados por proveedor."""
         return (
             self.db.query(Producto)
-            .filter(Producto.id_proveedor == id_proveedor, Producto.estado == True)
+            .filter(Producto.id_proveedor == id_proveedor, Producto.estado)
             .offset(skip)
             .limit(limit)
             .all()
