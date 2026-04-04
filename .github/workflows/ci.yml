@@ -31,7 +31,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/supermarket_test
+      DATABASE_URL: postgresql://neondb_owner:npg_IDUrXJzZ72Nh@ep-noisy-leaf-ai0c2c0h-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       SSL_MODE: disable
       PYTHONUNBUFFERED: "1"
 
