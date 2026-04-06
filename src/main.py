@@ -17,6 +17,7 @@ from api import factura
 from api import rol
 
 from database.config import create_tables
+
 try:
     from database.seeder_config import RUN_SEEDERS_ON_STARTUP
 except ImportError:
@@ -66,16 +67,17 @@ async def startup_event():
     print("Iniciando SuperMarket API...")
     print("Configurando base de datos...")
     create_tables()
-    
+
     # Ejecutar seeders si está habilitado
     if RUN_SEEDERS_ON_STARTUP:
         try:
             print("Ejecutando seeders de datos de prueba...")
             from database.seeders import seed_database
+
             seed_database()
         except Exception as e:
             print(f"⚠️  Error al ejecutar seeders: {e}")
-    
+
     print("Sistema listo para usar.")
     print("Documentación disponible en: http://localhost:8000/docs")
 

@@ -20,7 +20,9 @@ from entities.cliente import Cliente
 from entities.empleado import Empleado
 
 
-def crear_rol(db: Session, nombre: str, descripcion: str, salario: Decimal = None) -> Rol:
+def crear_rol(
+    db: Session, nombre: str, descripcion: str, salario: Decimal = None
+) -> Rol:
     """Crear un rol si no existe."""
     rol_existente = db.query(Rol).filter(Rol.nombre == nombre).first()
     if rol_existente:
@@ -43,9 +45,7 @@ def crear_rol(db: Session, nombre: str, descripcion: str, salario: Decimal = Non
 
 def crear_usuario_admin(db: Session, rol_admin: Rol) -> Usuario:
     """Crear usuario administrador si no existe."""
-    usuario_existente = db.query(Usuario).filter(
-        Usuario.username == "admin"
-    ).first()
+    usuario_existente = db.query(Usuario).filter(Usuario.username == "admin").first()
     if usuario_existente:
         print("  ✓ Usuario 'admin' ya existe")
         return usuario_existente
@@ -91,9 +91,9 @@ def crear_sucursales(db: Session, usuario_admin: Usuario) -> list:
 
     sucursales = []
     for data in sucursales_data:
-        sucursal_existente = db.query(Sucursal).filter(
-            Sucursal.nombre == data["nombre"]
-        ).first()
+        sucursal_existente = (
+            db.query(Sucursal).filter(Sucursal.nombre == data["nombre"]).first()
+        )
         if sucursal_existente:
             print(f"  ✓ Sucursal '{data['nombre']}' ya existe")
             sucursales.append(sucursal_existente)
@@ -144,9 +144,9 @@ def crear_tipos_producto(db: Session) -> list:
 
     tipos = []
     for data in tipos_data:
-        tipo_existente = db.query(TipoProducto).filter(
-            TipoProducto.nombre == data["nombre"]
-        ).first()
+        tipo_existente = (
+            db.query(TipoProducto).filter(TipoProducto.nombre == data["nombre"]).first()
+        )
         if tipo_existente:
             print(f"  ✓ Tipo de producto '{data['nombre']}' ya existe")
             tipos.append(tipo_existente)
@@ -195,9 +195,9 @@ def crear_proveedores(db: Session, usuario_admin: Usuario) -> list:
 
     proveedores = []
     for data in proveedores_data:
-        proveedor_existente = db.query(Proveedor).filter(
-            Proveedor.nombre == data["nombre"]
-        ).first()
+        proveedor_existente = (
+            db.query(Proveedor).filter(Proveedor.nombre == data["nombre"]).first()
+        )
         if proveedor_existente:
             print(f"  ✓ Proveedor '{data['nombre']}' ya existe")
             proveedores.append(proveedor_existente)
@@ -315,9 +315,9 @@ def crear_productos(
 
     productos = []
     for data in productos_data:
-        producto_existente = db.query(Producto).filter(
-            Producto.nombre == data["nombre"]
-        ).first()
+        producto_existente = (
+            db.query(Producto).filter(Producto.nombre == data["nombre"]).first()
+        )
         if producto_existente:
             print(f"  ✓ Producto '{data['nombre']}' ya existe")
             productos.append(producto_existente)
@@ -383,9 +383,9 @@ def crear_clientes(db: Session, usuario_admin: Usuario) -> list:
 
     clientes = []
     for data in clientes_data:
-        cliente_existente = db.query(Cliente).filter(
-            Cliente.email == data["email"]
-        ).first()
+        cliente_existente = (
+            db.query(Cliente).filter(Cliente.email == data["email"]).first()
+        )
         if cliente_existente:
             print(f"  ✓ Cliente '{data['nombre']}' ya existe")
             clientes.append(cliente_existente)
@@ -450,16 +450,16 @@ def crear_empleados(
 
     empleados = []
     for data in empleados_data:
-        empleado_existente = db.query(Empleado).filter(
-            Empleado.username == data["username"]
-        ).first()
+        empleado_existente = (
+            db.query(Empleado).filter(Empleado.username == data["username"]).first()
+        )
         if empleado_existente:
             print(f"  ✓ Empleado '{data['nombre']}' ya existe")
             empleados.append(empleado_existente)
             continue
 
         rol = rol_gerente if data["rol"] == "gerente" else rol_empleado
-        
+
         empleado = Empleado(
             id=uuid.uuid4(),
             username=data["username"],
@@ -502,9 +502,7 @@ def seed_database():
             "Usuario administrador con acceso total",
             Decimal("3000"),
         )
-        rol_gerente = crear_rol(
-            db, "Gerente", "Gerente de sucursal", Decimal("2500")
-        )
+        rol_gerente = crear_rol(db, "Gerente", "Gerente de sucursal", Decimal("2500"))
         rol_empleado = crear_rol(
             db,
             "Empleado",

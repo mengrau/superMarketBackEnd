@@ -61,6 +61,9 @@ jobs:
       - name: Sincronizar esquema con DB (Alembic)
         run: alembic upgrade head
 
+      - name: Ejecutar seeders (datos iniciales)
+        run: python cli.py seed
+
       - name: Verificar datos iniciales de roles
         run: |
           python -c "import os; from sqlalchemy import create_engine, text; e = create_engine(os.environ['DATABASE_URL']); c = e.connect(); n = c.execute(text(\"SELECT count(*) FROM roles WHERE nombre IN ('admin','empleado')\")).scalar(); c.close(); assert n >= 2, f'Seed incompleto: {n}'; print(f'Roles base OK: {n}')"
