@@ -4,12 +4,11 @@ Ejecutar: python -m src.database.seeders
 """
 
 import uuid
-from datetime import datetime, timezone
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from database.config import SessionLocal, engine, Base
+from database.config import SessionLocal
 from auth.security import hash_password
 from entities.rol import Rol
 from entities.usuario import Usuario
@@ -48,7 +47,7 @@ def crear_usuario_admin(db: Session, rol_admin: Rol) -> Usuario:
         Usuario.username == "admin"
     ).first()
     if usuario_existente:
-        print(f"  ✓ Usuario 'admin' ya existe")
+        print("  ✓ Usuario 'admin' ya existe")
         return usuario_existente
 
     usuario = Usuario(
@@ -63,7 +62,7 @@ def crear_usuario_admin(db: Session, rol_admin: Rol) -> Usuario:
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
-    print(f"  ✓ Usuario 'admin' creado (contraseña: admin123)")
+    print("  ✓ Usuario 'admin' creado (contraseña: admin123)")
     return usuario
 
 
@@ -512,12 +511,6 @@ def seed_database():
             "Empleado de caja y atención",
             Decimal("1200"),
         )
-        rol_analista = crear_rol(
-            db,
-            "Analista",
-            "Analista de inventario",
-            Decimal("1500"),
-        )
         print()
 
         # 2. Crear usuario administrador
@@ -559,7 +552,7 @@ def seed_database():
         print("✓ SEEDERS COMPLETADOS EXITOSAMENTE")
         print("=" * 60)
         print("\n📊 Resumen:")
-        print(f"  • Roles: 4")
+        print("  • Roles: 3")
         print(f"  • Usuarios: {len(empleados) + 1} (admin + empleados)")
         print(f"  • Sucursales: {len(sucursales)}")
         print(f"  • Tipos de Producto: {len(tipos_producto)}")
