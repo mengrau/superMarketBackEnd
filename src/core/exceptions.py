@@ -1,6 +1,4 @@
-"""
-Excepciones personalizadas y utilidades para respuestas de error homogéneas.
-"""
+"""Excepciones de dominio y aplicación para la API SuperMarket."""
 
 from dataclasses import dataclass
 from typing import Any
@@ -17,6 +15,8 @@ class AppError(Exception):
 
 
 class BadRequestError(AppError):
+    """Error de solicitud inválida (HTTP 400)."""
+
     def __init__(self, message: str, details: Any = None):
         super().__init__(
             message=message,
@@ -27,6 +27,8 @@ class BadRequestError(AppError):
 
 
 class NotFoundError(AppError):
+    """Error cuando un recurso no existe (HTTP 404)."""
+
     def __init__(self, message: str, details: Any = None):
         super().__init__(
             message=message,
@@ -37,6 +39,8 @@ class NotFoundError(AppError):
 
 
 class ConflictError(AppError):
+    """Error por conflicto de datos o negocio (HTTP 409)."""
+
     def __init__(self, message: str, details: Any = None):
         super().__init__(
             message=message,
@@ -47,6 +51,8 @@ class ConflictError(AppError):
 
 
 class UnauthorizedError(AppError):
+    """Error de autenticación o autorización (HTTP 401)."""
+
     def __init__(self, message: str = "No autenticado", details: Any = None):
         super().__init__(
             message=message,
@@ -54,3 +60,7 @@ class UnauthorizedError(AppError):
             code="UNAUTHORIZED",
             details=details,
         )
+
+
+# Alias de compatibilidad para nomenclatura previa.
+AppException = AppError

@@ -8,7 +8,7 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime, timezone
 from decimal import Decimal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 def now_utc() -> datetime:
@@ -23,8 +23,7 @@ class AuditBase(BaseModel):
     id_usuario_creacion: Optional[UUID] = None
     id_usuario_edicion: Optional[UUID] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UsuarioBase(BaseModel):
@@ -49,8 +48,7 @@ class UsuarioUpdate(BaseModel):
 class UsuarioRead(UsuarioBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LoginRequest(BaseModel):
@@ -91,8 +89,7 @@ class ClienteUpdate(BaseModel):
 class ClienteRead(ClienteBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class EmpleadoBase(BaseModel):
@@ -130,8 +127,7 @@ class EmpleadoUpdate(BaseModel):
 
 
 class EmpleadoRead(EmpleadoBase, UsuarioRead):
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SucursalBase(BaseModel):
@@ -159,8 +155,7 @@ class SucursalUpdate(BaseModel):
 class SucursalRead(SucursalBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProveedorBase(BaseModel):
@@ -190,8 +185,7 @@ class ProveedorUpdate(BaseModel):
 class ProveedorRead(ProveedorBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TipoProductoBase(BaseModel):
@@ -217,8 +211,7 @@ class TipoProductoRead(TipoProductoBase):
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ProductoBase(BaseModel):
@@ -250,8 +243,7 @@ class ProductoUpdate(BaseModel):
 class ProductoRead(ProductoBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class InventarioBase(BaseModel):
@@ -281,8 +273,7 @@ class InventarioUpdate(BaseModel):
 class InventarioRead(InventarioBase, AuditBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DetalleFacturaBase(BaseModel):
@@ -310,8 +301,7 @@ class DetalleFacturaRead(DetalleFacturaBase):
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class FacturaBase(BaseModel):
@@ -331,7 +321,7 @@ class FacturaCreate(BaseModel):
     id_cliente: UUID
     id_empleado: UUID
     id_sucursal: UUID
-    detalles: List[DetalleFacturaCreate] = []
+    detalles: List[DetalleFacturaCreate] = Field(default_factory=list)
 
 
 class FacturaUpdate(BaseModel):
@@ -341,10 +331,9 @@ class FacturaUpdate(BaseModel):
 
 class FacturaRead(FacturaBase, AuditBase):
     id: UUID
-    detalles: List[DetalleFacturaRead] = []
+    detalles: List[DetalleFacturaRead] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DetalleCompraBase(BaseModel):
@@ -371,8 +360,7 @@ class DetalleCompraRead(DetalleCompraBase):
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CompraProveedorBase(BaseModel):
@@ -388,7 +376,7 @@ class CompraProveedorBase(BaseModel):
 class CompraProveedorCreate(BaseModel):
     id_proveedor: UUID
     id_sucursal: Optional[UUID] = None
-    detalles: List[DetalleCompraCreate] = []
+    detalles: List[DetalleCompraCreate] = Field(default_factory=list)
 
 
 class CompraProveedorUpdate(BaseModel):
@@ -397,10 +385,9 @@ class CompraProveedorUpdate(BaseModel):
 
 class CompraProveedorRead(CompraProveedorBase, AuditBase):
     id: UUID
-    detalles: List[DetalleCompraRead] = []
+    detalles: List[DetalleCompraRead] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RolBase(BaseModel):
@@ -428,5 +415,4 @@ class RolRead(RolBase):
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

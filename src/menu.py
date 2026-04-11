@@ -738,7 +738,6 @@ def menu_inventario():
                 id_prod = leer_uuid("  UUID del producto: ")
                 id_suc = leer_uuid("  UUID de la sucursal: ")
                 if id_prod and id_suc:
-                    # No existe endpoint directo; filtramos los de la sucursal
                     inventarios = http_client.get(
                         f"/inventarios/sucursal/{id_suc}", params={"limit": 500}
                     )

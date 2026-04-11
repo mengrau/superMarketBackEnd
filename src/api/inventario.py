@@ -1,12 +1,14 @@
+"""Endpoints HTTP para el recurso inventario."""
+
 from typing import List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from core.errors import BadRequestError, NotFoundError
+from core.exceptions import BadRequestError, NotFoundError
 from crud.inventario_crud import InventarioCRUD
-from database.config import get_db
+from core.config import get_db
 from models import InventarioCreate, InventarioRead, InventarioUpdate
 
 router = APIRouter()

@@ -1,9 +1,11 @@
+"""Entidad ORM para inventario."""
+
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database.config import Base
+from core.config import Base
 
 
 class Inventario(Base):

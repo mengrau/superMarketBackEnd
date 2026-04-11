@@ -1,611 +1,614 @@
-"""
-Script de seeders para popular la base de datos con datos de prueba.
-Ejecutar: python -m src.database.seeders
+"""Seeders idempotentes para datos iniciales del proyecto SuperMarket.
+
+El flujo replica el enfoque usado en clase-aplicacion-web:
+1. Crear/obtener usuario administrador.
+2. Sembrar catálogos y maestros en orden.
+3. Evitar duplicados usando claves de negocio.
 """
 
 import uuid
+from collections.abc import Iterable
 from decimal import Decimal
-from typing import Iterable
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+from typing import Any
 
-from database.config import SessionLocal
-from auth.security import hash_password
-from entities.rol import Rol
-from entities.usuario import Usuario
-from entities.sucursal import Sucursal
-from entities.tipoProducto import TipoProducto
-from entities.producto import Producto
-from entities.proveedor import Proveedor
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from core.auth import hash_password, verify_password
+from core.config import SessionLocal
 from entities.cliente import Cliente
 from entities.empleado import Empleado
+from entities.producto import Producto
+from entities.proveedor import Proveedor
+from entities.rol import Rol
+from entities.sucursal import Sucursal
+from entities.tipoProducto import TipoProducto
+from entities.usuario import Usuario
+
+ROLE_SEED_DATA: list[dict[str, Any]] = [
+    {
+        "nombre": "admin",
+        "descripcion": "Usuario administrador con acceso total",
+        "salario": Decimal("3000"),
+        "aliases": ["Administrador"],
+    },
+    {
+        "nombre": "gerente",
+        "descripcion": "Gerente de sucursal",
+        "salario": Decimal("2500"),
+        "aliases": ["Gerente"],
+    },
+    {
+        "nombre": "empleado",
+        "descripcion": "Empleado de caja y atención",
+        "salario": Decimal("1200"),
+        "aliases": ["Empleado"],
+    },
+]
+
+SUCURSALES_SEED_DATA: list[dict[str, str]] = [
+    {
+        "nombre": "SuperMarket Centro",
+        "direccion": "Calle Principal 123",
+        "gerente": "Juan García",
+        "telefono": "(555) 123-4567",
+    },
+    {
+        "nombre": "SuperMarket Norte",
+        "direccion": "Avenida Norte 456",
+        "gerente": "María López",
+        "telefono": "(555) 234-5678",
+    },
+    {
+        "nombre": "SuperMarket Sur",
+        "direccion": "Carrera Sur 789",
+        "gerente": "Carlos Rodríguez",
+        "telefono": "(555) 345-6789",
+    },
+]
+
+TIPOS_PRODUCTO_SEED_DATA: list[dict[str, str]] = [
+    {"nombre": "Alimentos", "descripcion": "Productos alimenticios en general"},
+    {"nombre": "Bebidas", "descripcion": "Bebidas alcohólicas y no alcohólicas"},
+    {"nombre": "Lácteos", "descripcion": "Productos lácteos y derivados"},
+    {
+        "nombre": "Carnes y Pescados",
+        "descripcion": "Carnes frescas, aves y pescados",
+    },
+    {"nombre": "Frutas y Verduras", "descripcion": "Productos frescos"},
+    {
+        "nombre": "Productos de Limpieza",
+        "descripcion": "Artículos de limpieza del hogar",
+    },
+    {
+        "nombre": "Higiene Personal",
+        "descripcion": "Productos de higiene y cuidado personal",
+    },
+    {"nombre": "Productos Congelados", "descripcion": "Alimentos congelados"},
+]
+
+PROVEEDORES_SEED_DATA: list[dict[str, str]] = [
+    {
+        "nombre": "Distribuidora Nacional",
+        "nit": "800123456789",
+        "telefono": "(555) 111-2222",
+        "correo": "contacto@distribuidora.com",
+        "direccion": "Calle Industrial 100",
+    },
+    {
+        "nombre": "Importaciones Rápidas",
+        "nit": "800234567890",
+        "telefono": "(555) 222-3333",
+        "correo": "info@importaciones.com",
+        "direccion": "Avenida Comercial 200",
+    },
+    {
+        "nombre": "Productos Frescos SA",
+        "nit": "800345678901",
+        "telefono": "(555) 333-4444",
+        "correo": "ventas@frescos.com",
+        "direccion": "Zona Agrícola 300",
+    },
+]
+
+PRODUCTOS_SEED_DATA: list[dict[str, Any]] = [
+    {
+        "nombre": "Leche Entera 1L",
+        "tipo_idx": 2,
+        "proveedor_idx": 0,
+        "precio": Decimal("2.50"),
+        "codigo_barras": "7501234567890",
+    },
+    {
+        "nombre": "Pan Integral",
+        "tipo_idx": 0,
+        "proveedor_idx": 0,
+        "precio": Decimal("1.50"),
+        "codigo_barras": "7501234567891",
+    },
+    {
+        "nombre": "Queso Cheddar 200g",
+        "tipo_idx": 2,
+        "proveedor_idx": 0,
+        "precio": Decimal("4.99"),
+        "codigo_barras": "7501234567892",
+    },
+    {
+        "nombre": "Yogurt Natural 125g",
+        "tipo_idx": 2,
+        "proveedor_idx": 0,
+        "precio": Decimal("1.20"),
+        "codigo_barras": "7501234567893",
+    },
+    {
+        "nombre": "Pollo Fresco kg",
+        "tipo_idx": 3,
+        "proveedor_idx": 2,
+        "precio": Decimal("8.50"),
+        "codigo_barras": "7501234567894",
+    },
+    {
+        "nombre": "Atún en Lata",
+        "tipo_idx": 3,
+        "proveedor_idx": 2,
+        "precio": Decimal("2.80"),
+        "codigo_barras": "7501234567895",
+    },
+    {
+        "nombre": "Manzanas kg",
+        "tipo_idx": 4,
+        "proveedor_idx": 2,
+        "precio": Decimal("3.00"),
+        "codigo_barras": "7501234567896",
+    },
+    {
+        "nombre": "Lechuga Fresca",
+        "tipo_idx": 4,
+        "proveedor_idx": 2,
+        "precio": Decimal("1.75"),
+        "codigo_barras": "7501234567897",
+    },
+    {
+        "nombre": "Detergente Líquido",
+        "tipo_idx": 5,
+        "proveedor_idx": 1,
+        "precio": Decimal("3.99"),
+        "codigo_barras": "7501234567898",
+    },
+    {
+        "nombre": "Jabón de Manos",
+        "tipo_idx": 6,
+        "proveedor_idx": 1,
+        "precio": Decimal("2.50"),
+        "codigo_barras": "7501234567899",
+    },
+    {
+        "nombre": "Agua Embotellada 6 pack",
+        "tipo_idx": 1,
+        "proveedor_idx": 1,
+        "precio": Decimal("1.99"),
+        "codigo_barras": "7501234567800",
+    },
+    {
+        "nombre": "Refresco Gaseoso",
+        "tipo_idx": 1,
+        "proveedor_idx": 1,
+        "precio": Decimal("2.20"),
+        "codigo_barras": "7501234567801",
+    },
+]
+
+CLIENTES_SEED_DATA: list[dict[str, str]] = [
+    {
+        "nombre": "Juan Carlos García",
+        "tipo_identificacion": "CC",
+        "identificacion": "1234567890",
+        "email": "juan.garcia@email.com",
+        "telefono": "(555) 100-0001",
+        "direccion": "Calle Falsa 123",
+    },
+    {
+        "nombre": "María Elena López",
+        "tipo_identificacion": "CC",
+        "identificacion": "0987654321",
+        "email": "maria.lopez@email.com",
+        "telefono": "(555) 100-0002",
+        "direccion": "Avenida Principal 456",
+    },
+    {
+        "nombre": "Roberto Díaz Martín",
+        "tipo_identificacion": "CE",
+        "identificacion": "1122334455",
+        "email": "roberto.diaz@email.com",
+        "telefono": "(555) 100-0003",
+        "direccion": "Carrera Central 789",
+    },
+    {
+        "nombre": "Ana Rodríguez Pérez",
+        "tipo_identificacion": "PA",
+        "identificacion": "9876543210",
+        "email": "ana.rodriguez@email.com",
+        "telefono": "(555) 100-0004",
+        "direccion": "Paseo Comercial 321",
+    },
+]
+
+EMPLEADOS_SEED_DATA: list[dict[str, str]] = [
+    {
+        "nombre": "Carlos Mendoza",
+        "username": "carlos.mendoza",
+        "tipo_identificacion": "CC",
+        "identificacion": "1111111111",
+        "telefono": "(555) 201-0001",
+        "direccion": "Calle 1 #100",
+        "cargo": "Cajero",
+        "rol": "empleado",
+    },
+    {
+        "nombre": "Diana Torres",
+        "username": "diana.torres",
+        "tipo_identificacion": "CC",
+        "identificacion": "2222222222",
+        "telefono": "(555) 201-0002",
+        "direccion": "Calle 2 #200",
+        "cargo": "Reponedor",
+        "rol": "empleado",
+    },
+    {
+        "nombre": "Felipe Ramírez",
+        "username": "felipe.ramirez",
+        "tipo_identificacion": "CC",
+        "identificacion": "3333333333",
+        "telefono": "(555) 201-0003",
+        "direccion": "Calle 3 #300",
+        "cargo": "Gerente de Turno",
+        "rol": "gerente",
+    },
+]
 
 
-def crear_rol(
-    db: Session,
-    nombre: str,
-    descripcion: str,
-    salario: Decimal = None,
-    alias_nombres: Iterable[str] = (),
-) -> Rol:
-    """Crear o normalizar un rol por nombre canónico y alias."""
-    nombres_busqueda = [nombre, *list(alias_nombres)]
-    nombres_busqueda = [n.lower() for n in nombres_busqueda]
-    rol_existente = (
-        db.query(Rol).filter(func.lower(Rol.nombre).in_(nombres_busqueda)).first()
-    )
+def _find_role_by_aliases(db: Session, name: str, aliases: Iterable[str]) -> Rol | None:
+    """Buscar rol por nombre canónico o alias, ignorando mayúsculas/minúsculas."""
+    candidates = [name, *aliases]
+    normalized = [candidate.strip().lower() for candidate in candidates if candidate]
+    return db.query(Rol).filter(func.lower(Rol.nombre).in_(normalized)).first()
 
-    if rol_existente:
-        actualizado = False
-        if rol_existente.nombre != nombre:
-            rol_existente.nombre = nombre
-            actualizado = True
-        if rol_existente.descripcion != descripcion:
-            rol_existente.descripcion = descripcion
-            actualizado = True
-        if rol_existente.salario != salario:
-            rol_existente.salario = salario
-            actualizado = True
-        if actualizado:
-            db.commit()
-            db.refresh(rol_existente)
-            print(f"  ✓ Rol '{nombre}' actualizado")
-        else:
-            print(f"  ✓ Rol '{nombre}' ya existe")
-        return rol_existente
 
-    rol = Rol(
-        id=uuid.uuid4(),
-        nombre=nombre,
-        descripcion=descripcion,
-        salario=salario,
-        activo=True,
-    )
-    db.add(rol)
+def seed_roles(db: Session) -> dict[str, Rol]:
+    """Sembrar roles base y devolverlos indexados por nombre canónico."""
+    roles: dict[str, Rol] = {}
+    for item in ROLE_SEED_DATA:
+        role = _find_role_by_aliases(db, item["nombre"], item.get("aliases", []))
+        if role:
+            print(f"  ✓ Rol '{item['nombre']}' ya existe")
+            roles[item["nombre"]] = role
+            continue
+
+        role = Rol(
+            id=uuid.uuid4(),
+            nombre=item["nombre"],
+            descripcion=item["descripcion"],
+            salario=item["salario"],
+            activo=True,
+        )
+        db.add(role)
+        db.flush()
+        print(f"  ✓ Rol '{item['nombre']}' creado")
+        roles[item["nombre"]] = role
+
     db.commit()
-    db.refresh(rol)
-    print(f"  ✓ Rol '{nombre}' creado")
-    return rol
+    return roles
 
 
-def crear_usuario_admin(db: Session, rol_admin: Rol) -> Usuario:
-    """Crear usuario administrador si no existe."""
-    usuario_existente = db.query(Usuario).filter(Usuario.username == "admin").first()
-    if usuario_existente:
-        print("  ✓ Usuario 'admin' ya existe")
-        return usuario_existente
+def get_or_create_admin(db: Session, admin_role: Rol) -> Usuario:
+    """Crear el usuario administrador si no existe y devolver su instancia."""
+    admin = db.query(Usuario).filter(Usuario.username == "admin").first()
+    if admin:
+        needs_update = False
+        if not admin.estado:
+            admin.estado = True
+            needs_update = True
+        if admin.id_rol != admin_role.id:
+            admin.id_rol = admin_role.id
+            needs_update = True
+        if not verify_password("admin123", admin.password_hash):
+            admin.password_hash = hash_password("admin123")
+            needs_update = True
+        if needs_update:
+            db.commit()
+            db.refresh(admin)
+            print("  ✓ Usuario 'admin' actualizado")
+        else:
+            print("  ✓ Usuario 'admin' ya existe")
+        return admin
 
-    usuario = Usuario(
+    admin = Usuario(
         id=uuid.uuid4(),
         username="admin",
         password_hash=hash_password("admin123"),
-        id_rol=rol_admin.id,
-        rol=rol_admin,
+        id_rol=admin_role.id,
+        rol=admin_role,
         estado=True,
         tipo="usuario",
     )
-    db.add(usuario)
+    db.add(admin)
     db.commit()
-    db.refresh(usuario)
+    db.refresh(admin)
     print("  ✓ Usuario 'admin' creado (contraseña: admin123)")
-    return usuario
+    return admin
 
 
-def crear_sucursales(db: Session, usuario_admin: Usuario) -> list:
-    """Crear sucursales de prueba."""
-    sucursales_data = [
-        {
-            "nombre": "SuperMarket Centro",
-            "direccion": "Calle Principal 123",
-            "gerente": "Juan García",
-            "telefono": "(555) 123-4567",
-        },
-        {
-            "nombre": "SuperMarket Norte",
-            "direccion": "Avenida Norte 456",
-            "gerente": "María López",
-            "telefono": "(555) 234-5678",
-        },
-        {
-            "nombre": "SuperMarket Sur",
-            "direccion": "Carrera Sur 789",
-            "gerente": "Carlos Rodríguez",
-            "telefono": "(555) 345-6789",
-        },
-    ]
-
-    sucursales = []
-    for data in sucursales_data:
-        sucursal_existente = (
-            db.query(Sucursal).filter(Sucursal.nombre == data["nombre"]).first()
-        )
-        if sucursal_existente:
-            print(f"  ✓ Sucursal '{data['nombre']}' ya existe")
-            sucursales.append(sucursal_existente)
+def _seed_sucursales(db: Session, created_by: Usuario) -> list[Sucursal]:
+    """Sembrar sucursales base de forma idempotente."""
+    records: list[Sucursal] = []
+    for item in SUCURSALES_SEED_DATA:
+        existing = db.query(Sucursal).filter(Sucursal.nombre == item["nombre"]).first()
+        if existing:
+            print(f"  ✓ Sucursal '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        sucursal = Sucursal(
+        record = Sucursal(
             id=uuid.uuid4(),
-            nombre=data["nombre"],
-            direccion=data["direccion"],
-            gerente=data["gerente"],
-            telefono=data["telefono"],
+            nombre=item["nombre"],
+            direccion=item["direccion"],
+            gerente=item["gerente"],
+            telefono=item["telefono"],
             estado=True,
-            id_usuario_creacion=usuario_admin.id,
+            id_usuario_creacion=created_by.id,
         )
-        db.add(sucursal)
-        db.commit()
-        db.refresh(sucursal)
-        print(f"  ✓ Sucursal '{data['nombre']}' creada")
-        sucursales.append(sucursal)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Sucursal '{item['nombre']}' creada")
+        records.append(record)
 
-    return sucursales
+    db.commit()
+    return records
 
 
-def crear_tipos_producto(db: Session) -> list:
-    """Crear tipos de productos."""
-    tipos_data = [
-        {"nombre": "Alimentos", "descripcion": "Productos alimenticios en general"},
-        {"nombre": "Bebidas", "descripcion": "Bebidas alcohólicas y no alcohólicas"},
-        {
-            "nombre": "Lácteos",
-            "descripcion": "Productos lácteos y derivados",
-        },
-        {
-            "nombre": "Carnes y Pescados",
-            "descripcion": "Carnes frescas, aves y pescados",
-        },
-        {"nombre": "Frutas y Verduras", "descripcion": "Productos frescos"},
-        {
-            "nombre": "Productos de Limpieza",
-            "descripcion": "Artículos de limpieza del hogar",
-        },
-        {
-            "nombre": "Higiene Personal",
-            "descripcion": "Productos de higiene y cuidado personal",
-        },
-        {"nombre": "Productos Congelados", "descripcion": "Alimentos congelados"},
-    ]
-
-    tipos = []
-    for data in tipos_data:
-        tipo_existente = (
-            db.query(TipoProducto).filter(TipoProducto.nombre == data["nombre"]).first()
+def _seed_tipos_producto(db: Session) -> list[TipoProducto]:
+    """Sembrar catálogo de tipos de producto de forma idempotente."""
+    records: list[TipoProducto] = []
+    for item in TIPOS_PRODUCTO_SEED_DATA:
+        existing = (
+            db.query(TipoProducto).filter(TipoProducto.nombre == item["nombre"]).first()
         )
-        if tipo_existente:
-            print(f"  ✓ Tipo de producto '{data['nombre']}' ya existe")
-            tipos.append(tipo_existente)
+        if existing:
+            print(f"  ✓ Tipo de producto '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        tipo = TipoProducto(
+        record = TipoProducto(
             id=uuid.uuid4(),
-            nombre=data["nombre"],
-            descripcion=data["descripcion"],
+            nombre=item["nombre"],
+            descripcion=item["descripcion"],
             estado=True,
         )
-        db.add(tipo)
-        db.commit()
-        db.refresh(tipo)
-        print(f"  ✓ Tipo de producto '{data['nombre']}' creado")
-        tipos.append(tipo)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Tipo de producto '{item['nombre']}' creado")
+        records.append(record)
 
-    return tipos
+    db.commit()
+    return records
 
 
-def crear_proveedores(db: Session, usuario_admin: Usuario) -> list:
-    """Crear proveedores de prueba."""
-    proveedores_data = [
-        {
-            "nombre": "Distribuidora Nacional",
-            "nit": "800123456789",
-            "telefono": "(555) 111-2222",
-            "correo": "contacto@distribuidora.com",
-            "direccion": "Calle Industrial 100",
-        },
-        {
-            "nombre": "Importaciones Rápidas",
-            "nit": "800234567890",
-            "telefono": "(555) 222-3333",
-            "correo": "info@importaciones.com",
-            "direccion": "Avenida Comercial 200",
-        },
-        {
-            "nombre": "Productos Frescos SA",
-            "nit": "800345678901",
-            "telefono": "(555) 333-4444",
-            "correo": "ventas@frescos.com",
-            "direccion": "Zona Agrícola 300",
-        },
-    ]
-
-    proveedores = []
-    for data in proveedores_data:
-        proveedor_existente = (
-            db.query(Proveedor).filter(Proveedor.nombre == data["nombre"]).first()
-        )
-        if proveedor_existente:
-            print(f"  ✓ Proveedor '{data['nombre']}' ya existe")
-            proveedores.append(proveedor_existente)
+def _seed_proveedores(db: Session, created_by: Usuario) -> list[Proveedor]:
+    """Sembrar proveedores base de forma idempotente."""
+    records: list[Proveedor] = []
+    for item in PROVEEDORES_SEED_DATA:
+        existing = db.query(Proveedor).filter(Proveedor.nit == item["nit"]).first()
+        if existing:
+            print(f"  ✓ Proveedor '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        proveedor = Proveedor(
+        record = Proveedor(
             id=uuid.uuid4(),
-            nombre=data["nombre"],
-            nit=data["nit"],
-            telefono=data["telefono"],
-            correo=data["correo"],
-            direccion=data["direccion"],
+            nombre=item["nombre"],
+            nit=item["nit"],
+            telefono=item["telefono"],
+            correo=item["correo"],
+            direccion=item["direccion"],
             estado=True,
-            id_usuario_creacion=usuario_admin.id,
+            id_usuario_creacion=created_by.id,
         )
-        db.add(proveedor)
-        db.commit()
-        db.refresh(proveedor)
-        print(f"  ✓ Proveedor '{data['nombre']}' creado")
-        proveedores.append(proveedor)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Proveedor '{item['nombre']}' creado")
+        records.append(record)
 
-    return proveedores
+    db.commit()
+    return records
 
 
-def crear_productos(
-    db: Session, tipos: list, proveedores: list, usuario_admin: Usuario
-) -> list:
-    """Crear productos de prueba."""
-    productos_data = [
-        {
-            "nombre": "Leche Entera 1L",
-            "tipo_idx": 2,  # Lácteos
-            "proveedor_idx": 0,
-            "precio": Decimal("2.50"),
-            "codigo_barras": "7501234567890",
-        },
-        {
-            "nombre": "Pan Integral",
-            "tipo_idx": 0,  # Alimentos
-            "proveedor_idx": 0,
-            "precio": Decimal("1.50"),
-            "codigo_barras": "7501234567891",
-        },
-        {
-            "nombre": "Queso Cheddar 200g",
-            "tipo_idx": 2,  # Lácteos
-            "proveedor_idx": 0,
-            "precio": Decimal("4.99"),
-            "codigo_barras": "7501234567892",
-        },
-        {
-            "nombre": "Yogurt Natural 125g",
-            "tipo_idx": 2,  # Lácteos
-            "proveedor_idx": 0,
-            "precio": Decimal("1.20"),
-            "codigo_barras": "7501234567893",
-        },
-        {
-            "nombre": "Pollo Fresco kg",
-            "tipo_idx": 3,  # Carnes
-            "proveedor_idx": 2,
-            "precio": Decimal("8.50"),
-            "codigo_barras": "7501234567894",
-        },
-        {
-            "nombre": "Atún en Lata",
-            "tipo_idx": 3,  # Carnes y Pescados
-            "proveedor_idx": 2,
-            "precio": Decimal("2.80"),
-            "codigo_barras": "7501234567895",
-        },
-        {
-            "nombre": "Manzanas kg",
-            "tipo_idx": 4,  # Frutas y Verduras
-            "proveedor_idx": 2,
-            "precio": Decimal("3.00"),
-            "codigo_barras": "7501234567896",
-        },
-        {
-            "nombre": "Lechuga Fresca",
-            "tipo_idx": 4,  # Frutas y Verduras
-            "proveedor_idx": 2,
-            "precio": Decimal("1.75"),
-            "codigo_barras": "7501234567897",
-        },
-        {
-            "nombre": "Detergente Líquido",
-            "tipo_idx": 5,  # Limpieza
-            "proveedor_idx": 1,
-            "precio": Decimal("3.99"),
-            "codigo_barras": "7501234567898",
-        },
-        {
-            "nombre": "Jabón de Manos",
-            "tipo_idx": 6,  # Higiene
-            "proveedor_idx": 1,
-            "precio": Decimal("2.50"),
-            "codigo_barras": "7501234567899",
-        },
-        {
-            "nombre": "Agua Embotellada 6 pack",
-            "tipo_idx": 1,  # Bebidas
-            "proveedor_idx": 1,
-            "precio": Decimal("1.99"),
-            "codigo_barras": "7501234567800",
-        },
-        {
-            "nombre": "Refresco Gaseoso",
-            "tipo_idx": 1,  # Bebidas
-            "proveedor_idx": 1,
-            "precio": Decimal("2.20"),
-            "codigo_barras": "7501234567801",
-        },
-    ]
-
-    productos = []
-    for data in productos_data:
-        producto_existente = (
-            db.query(Producto).filter(Producto.nombre == data["nombre"]).first()
+def _seed_productos(
+    db: Session,
+    tipos_producto: list[TipoProducto],
+    proveedores: list[Proveedor],
+    created_by: Usuario,
+) -> list[Producto]:
+    """Sembrar productos base de forma idempotente."""
+    records: list[Producto] = []
+    for item in PRODUCTOS_SEED_DATA:
+        existing = (
+            db.query(Producto)
+            .filter(Producto.codigo_barras == item["codigo_barras"])
+            .first()
         )
-        if producto_existente:
-            print(f"  ✓ Producto '{data['nombre']}' ya existe")
-            productos.append(producto_existente)
+        if existing:
+            print(f"  ✓ Producto '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        producto = Producto(
+        record = Producto(
             id=uuid.uuid4(),
-            nombre=data["nombre"],
-            id_tipo=tipos[data["tipo_idx"]].id,
-            tipo=tipos[data["tipo_idx"]],
-            id_proveedor=proveedores[data["proveedor_idx"]].id,
-            proveedor=proveedores[data["proveedor_idx"]],
-            precio_venta=data["precio"],
-            codigo_barras=data["codigo_barras"],
+            nombre=item["nombre"],
+            id_tipo=tipos_producto[item["tipo_idx"]].id,
+            id_proveedor=proveedores[item["proveedor_idx"]].id,
+            precio_venta=item["precio"],
+            codigo_barras=item["codigo_barras"],
             estado=True,
-            id_usuario_creacion=usuario_admin.id,
+            id_usuario_creacion=created_by.id,
         )
-        db.add(producto)
-        db.commit()
-        db.refresh(producto)
-        print(f"  ✓ Producto '{data['nombre']}' creado")
-        productos.append(producto)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Producto '{item['nombre']}' creado")
+        records.append(record)
 
-    return productos
+    db.commit()
+    return records
 
 
-def crear_clientes(db: Session, usuario_admin: Usuario) -> list:
-    """Crear clientes de prueba."""
-    clientes_data = [
-        {
-            "nombre": "Juan Carlos García",
-            "tipo_identificacion": "CC",
-            "identificacion": "1234567890",
-            "email": "juan.garcia@email.com",
-            "telefono": "(555) 100-0001",
-            "direccion": "Calle Falsa 123",
-        },
-        {
-            "nombre": "María Elena López",
-            "tipo_identificacion": "CC",
-            "identificacion": "0987654321",
-            "email": "maria.lopez@email.com",
-            "telefono": "(555) 100-0002",
-            "direccion": "Avenida Principal 456",
-        },
-        {
-            "nombre": "Roberto Díaz Martín",
-            "tipo_identificacion": "CE",
-            "identificacion": "1122334455",
-            "email": "roberto.diaz@email.com",
-            "telefono": "(555) 100-0003",
-            "direccion": "Carrera Central 789",
-        },
-        {
-            "nombre": "Ana Rodríguez Pérez",
-            "tipo_identificacion": "PA",
-            "identificacion": "9876543210",
-            "email": "ana.rodriguez@email.com",
-            "telefono": "(555) 100-0004",
-            "direccion": "Paseo Comercial 321",
-        },
-    ]
-
-    clientes = []
-    for data in clientes_data:
-        cliente_existente = (
-            db.query(Cliente).filter(Cliente.email == data["email"]).first()
+def _seed_clientes(db: Session, created_by: Usuario) -> list[Cliente]:
+    """Sembrar clientes base de forma idempotente."""
+    records: list[Cliente] = []
+    for item in CLIENTES_SEED_DATA:
+        existing = (
+            db.query(Cliente)
+            .filter(Cliente.identificacion == item["identificacion"])
+            .first()
         )
-        if cliente_existente:
-            print(f"  ✓ Cliente '{data['nombre']}' ya existe")
-            clientes.append(cliente_existente)
+        if existing:
+            print(f"  ✓ Cliente '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        cliente = Cliente(
+        record = Cliente(
             id=uuid.uuid4(),
-            nombre=data["nombre"],
-            tipo_identificacion=data["tipo_identificacion"],
-            identificacion=data["identificacion"],
-            email=data["email"],
-            telefono=data["telefono"],
-            direccion=data["direccion"],
+            nombre=item["nombre"],
+            tipo_identificacion=item["tipo_identificacion"],
+            identificacion=item["identificacion"],
+            email=item["email"],
+            telefono=item["telefono"],
+            direccion=item["direccion"],
             estado=True,
-            id_usuario_creacion=usuario_admin.id,
+            id_usuario_creacion=created_by.id,
         )
-        db.add(cliente)
-        db.commit()
-        db.refresh(cliente)
-        print(f"  ✓ Cliente '{data['nombre']}' creado")
-        clientes.append(cliente)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Cliente '{item['nombre']}' creado")
+        records.append(record)
 
-    return clientes
+    db.commit()
+    return records
 
 
-def crear_empleados(
-    db: Session, rol_empleado: Rol, rol_gerente: Rol, usuario_admin: Usuario
-) -> list:
-    """Crear empleados de prueba."""
-    empleados_data = [
-        {
-            "nombre": "Carlos Mendoza",
-            "username": "carlos.mendoza",
-            "tipo_identificacion": "CC",
-            "identificacion": "1111111111",
-            "telefono": "(555) 201-0001",
-            "direccion": "Calle 1 #100",
-            "cargo": "Cajero",
-            "rol": "empleado",
-        },
-        {
-            "nombre": "Diana Torres",
-            "username": "diana.torres",
-            "tipo_identificacion": "CC",
-            "identificacion": "2222222222",
-            "telefono": "(555) 201-0002",
-            "direccion": "Calle 2 #200",
-            "cargo": "Reponedor",
-            "rol": "empleado",
-        },
-        {
-            "nombre": "Felipe Ramírez",
-            "username": "felipe.ramirez",
-            "tipo_identificacion": "CC",
-            "identificacion": "3333333333",
-            "telefono": "(555) 201-0003",
-            "direccion": "Calle 3 #300",
-            "cargo": "Gerente de Turno",
-            "rol": "gerente",
-        },
-    ]
-
-    empleados = []
-    for data in empleados_data:
-        empleado_existente = (
-            db.query(Empleado).filter(Empleado.username == data["username"]).first()
+def _seed_empleados(
+    db: Session,
+    role_by_name: dict[str, Rol],
+    created_by: Usuario,
+) -> list[Empleado]:
+    """Sembrar empleados base de forma idempotente."""
+    records: list[Empleado] = []
+    for item in EMPLEADOS_SEED_DATA:
+        existing = (
+            db.query(Empleado).filter(Empleado.username == item["username"]).first()
         )
-        if empleado_existente:
-            print(f"  ✓ Empleado '{data['nombre']}' ya existe")
-            empleados.append(empleado_existente)
+        if existing:
+            print(f"  ✓ Empleado '{item['nombre']}' ya existe")
+            records.append(existing)
             continue
 
-        rol = rol_gerente if data["rol"] == "gerente" else rol_empleado
+        role_name = "gerente" if item["rol"] == "gerente" else "empleado"
+        role = role_by_name[role_name]
 
-        empleado = Empleado(
+        record = Empleado(
             id=uuid.uuid4(),
-            username=data["username"],
+            username=item["username"],
             password_hash=hash_password("empleado123"),
-            id_rol=rol.id,
-            rol=rol,
+            id_rol=role.id,
+            rol=role,
             estado=True,
             tipo="empleado",
-            nombre=data["nombre"],
-            tipo_identificacion=data["tipo_identificacion"],
-            identificacion=data["identificacion"],
-            telefono=data["telefono"],
-            direccion=data["direccion"],
-            cargo=data["cargo"],
-            id_usuario_creacion=usuario_admin.id,
+            nombre=item["nombre"],
+            tipo_identificacion=item["tipo_identificacion"],
+            identificacion=item["identificacion"],
+            telefono=item["telefono"],
+            direccion=item["direccion"],
+            cargo=item["cargo"],
+            id_usuario_creacion=created_by.id,
         )
-        db.add(empleado)
-        db.commit()
-        db.refresh(empleado)
-        print(f"  ✓ Empleado '{data['nombre']}' creado (usuario: {data['username']})")
-        empleados.append(empleado)
+        db.add(record)
+        db.flush()
+        print(f"  ✓ Empleado '{item['nombre']}' creado (usuario: {item['username']})")
+        records.append(record)
 
-    return empleados
+    db.commit()
+    return records
 
 
-def seed_database():
-    """Ejecutar todos los seeders."""
+def seed_database() -> None:
+    """Sembrar datos iniciales con flujo idempotente y transaccional."""
     print("\n" + "=" * 60)
     print("INICIANDO SEEDERS DE BASE DE DATOS")
     print("=" * 60 + "\n")
 
     db = SessionLocal()
-
     try:
-        # 1. Crear roles
         print("1. Creando Roles...")
-        rol_admin = crear_rol(
-            db,
-            "admin",
-            "Usuario administrador con acceso total",
-            Decimal("3000"),
-            alias_nombres=("Administrador",),
-        )
-        rol_gerente = crear_rol(
-            db,
-            "gerente",
-            "Gerente de sucursal",
-            Decimal("2500"),
-            alias_nombres=("Gerente",),
-        )
-        rol_empleado = crear_rol(
-            db,
-            "empleado",
-            "Empleado de caja y atención",
-            Decimal("1200"),
-            alias_nombres=("Empleado",),
-        )
+        roles = seed_roles(db)
         print()
 
-        # 2. Crear usuario administrador
         print("2. Creando Usuario Administrador...")
-        usuario_admin = crear_usuario_admin(db, rol_admin)
+        admin = get_or_create_admin(db, roles["admin"])
         print()
 
-        # 3. Crear sucursales
         print("3. Creando Sucursales...")
-        sucursales = crear_sucursales(db, usuario_admin)
+        sucursales = _seed_sucursales(db, admin)
         print()
 
-        # 4. Crear tipos de productos
         print("4. Creando Tipos de Productos...")
-        tipos_producto = crear_tipos_producto(db)
+        tipos_producto = _seed_tipos_producto(db)
         print()
 
-        # 5. Crear proveedores
         print("5. Creando Proveedores...")
-        proveedores = crear_proveedores(db, usuario_admin)
+        proveedores = _seed_proveedores(db, admin)
         print()
 
-        # 6. Crear productos
         print("6. Creando Productos...")
-        productos = crear_productos(db, tipos_producto, proveedores, usuario_admin)
+        productos = _seed_productos(db, tipos_producto, proveedores, admin)
         print()
 
-        # 7. Crear clientes
         print("7. Creando Clientes...")
-        clientes = crear_clientes(db, usuario_admin)
+        clientes = _seed_clientes(db, admin)
         print()
 
-        # 8. Crear empleados
         print("8. Creando Empleados...")
-        empleados = crear_empleados(db, rol_empleado, rol_gerente, usuario_admin)
+        empleados = _seed_empleados(db, roles, admin)
         print()
 
         print("=" * 60)
-        print("✓ SEEDERS COMPLETADOS EXITOSAMENTE")
+        print("SEEDERS COMPLETADOS EXITOSAMENTE")
         print("=" * 60)
-        print("\n📊 Resumen:")
-        print("  • Roles: 3")
-        print(f"  • Usuarios: {len(empleados) + 1} (admin + empleados)")
-        print(f"  • Sucursales: {len(sucursales)}")
-        print(f"  • Tipos de Producto: {len(tipos_producto)}")
-        print(f"  • Productos: {len(productos)}")
-        print(f"  • Proveedores: {len(proveedores)}")
-        print(f"  • Clientes: {len(clientes)}")
-        print(f"  • Empleados: {len(empleados)}")
-        print("\n🔑 Credenciales por defecto:")
-        print("  • Usuario admin: admin / admin123")
-        print("  • Empleados: {username} / empleado123")
+        print("\nResumen:")
+        print(f"  - Roles: {len(roles)}")
+        print(f"  - Usuarios: {len(empleados) + 1} (admin + empleados)")
+        print(f"  - Sucursales: {len(sucursales)}")
+        print(f"  - Tipos de Producto: {len(tipos_producto)}")
+        print(f"  - Productos: {len(productos)}")
+        print(f"  - Proveedores: {len(proveedores)}")
+        print(f"  - Clientes: {len(clientes)}")
+        print(f"  - Empleados: {len(empleados)}")
+        print("\nCredenciales por defecto:")
+        print("  - Usuario admin: admin / admin123")
+        print("  - Empleados: {username} / empleado123")
         print()
-
-    except IntegrityError as e:
+    except IntegrityError:
         db.rollback()
-        print(f"\n❌ Error de integridad: {e}")
-    except Exception as e:
+        raise
+    except Exception:
         db.rollback()
-        print(f"\n❌ Error: {e}")
+        raise
     finally:
         db.close()
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Punto de entrada para ejecución manual del seeder."""
     seed_database()
+
+
+if __name__ == "__main__":
+    main()

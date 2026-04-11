@@ -1,9 +1,11 @@
+"""Endpoints HTTP para el recurso proveedor."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 
-from database.config import get_db
+from core.config import get_db
 from models import ProveedorCreate, ProveedorRead, ProveedorUpdate
 from crud.proveedor_crud import ProveedorCRUD
 
