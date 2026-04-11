@@ -5,6 +5,8 @@ Ejecutar: python -m src.database.seeders
 
 import uuid
 from decimal import Decimal
+from typing import Iterable
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -21,12 +23,36 @@ from entities.empleado import Empleado
 
 
 def crear_rol(
-    db: Session, nombre: str, descripcion: str, salario: Decimal = None
+    db: Session,
+    nombre: str,
+    descripcion: str,
+    salario: Decimal = None,
+    alias_nombres: Iterable[str] = (),
 ) -> Rol:
-    """Crear un rol si no existe."""
-    rol_existente = db.query(Rol).filter(Rol.nombre == nombre).first()
+    """Crear o normalizar un rol por nombre canónico y alias."""
+    nombres_busqueda = [nombre, *list(alias_nombres)]
+    nombres_busqueda = [n.lower() for n in nombres_busqueda]
+    rol_existente = (
+        db.query(Rol).filter(func.lower(Rol.nombre).in_(nombres_busqueda)).first()
+    )
+
     if rol_existente:
-        print(f"  ✓ Rol '{nombre}' ya existe")
+        actualizado = False
+        if rol_existente.nombre != nombre:
+            rol_existente.nombre = nombre
+            actualizado = True
+        if rol_existente.descripcion != descripcion:
+            rol_existente.descripcion = descripcion
+            actualizado = True
+        if rol_existente.salario != salario:
+            rol_existente.salario = salario
+            actualizado = True
+        if actualizado:
+            db.commit()
+            db.refresh(rol_existente)
+            print(f"  ✓ Rol '{nombre}' actualizado")
+        else:
+            print(f"  ✓ Rol '{nombre}' ya existe")
         return rol_existente
 
     rol = Rol(
@@ -498,16 +524,24 @@ def seed_database():
         print("1. Creando Roles...")
         rol_admin = crear_rol(
             db,
-            "Administrador",
+            "admin",
             "Usuario administrador con acceso total",
             Decimal("3000"),
+            alias_nombres=("Administrador",),
         )
-        rol_gerente = crear_rol(db, "Gerente", "Gerente de sucursal", Decimal("2500"))
+        rol_gerente = crear_rol(
+            db,
+            "gerente",
+            "Gerente de sucursal",
+            Decimal("2500"),
+            alias_nombres=("Gerente",),
+        )
         rol_empleado = crear_rol(
             db,
-            "Empleado",
+            "empleado",
             "Empleado de caja y atención",
             Decimal("1200"),
+            alias_nombres=("Empleado",),
         )
         print()
 

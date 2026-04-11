@@ -1,9 +1,10 @@
 from typing import List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from core.errors import BadRequestError, NotFoundError
 from crud.inventario_crud import InventarioCRUD
 from database.config import get_db
 from models import InventarioCreate, InventarioRead, InventarioUpdate
@@ -23,7 +24,7 @@ def create(inventario: InventarioCreate, db: Session = Depends(get_db)):
             ubicacion=inventario.ubicacion,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.get("/", response_model=List[InventarioRead])
@@ -62,7 +63,7 @@ def get_one(inventario_id: UUID, db: Session = Depends(get_db)):
     crud = InventarioCRUD(db)
     inv = crud.obtener_inventario(inventario_id)
     if not inv:
-        raise HTTPException(status_code=404, detail="Inventario no encontrado")
+        raise NotFoundError("Inventario no encontrado")
     return inv
 
 
@@ -74,10 +75,10 @@ def update(inventario_id: UUID, datos: InventarioUpdate, db: Session = Depends(g
             inventario_id, **datos.model_dump(exclude_unset=True)
         )
         if not inv:
-            raise HTTPException(status_code=404, detail="Inventario no encontrado")
+            raise NotFoundError("Inventario no encontrado")
         return inv
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.patch("/{inventario_id}/ajustar-stock", response_model=InventarioRead)
@@ -87,10 +88,10 @@ def ajustar_stock(inventario_id: UUID, cantidad: int, db: Session = Depends(get_
     try:
         inv = crud.ajustar_stock(inventario_id, cantidad)
         if not inv:
-            raise HTTPException(status_code=404, detail="Inventario no encontrado")
+            raise NotFoundError("Inventario no encontrado")
         return inv
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.delete("/{inventario_id}", response_model=InventarioRead)
@@ -98,6 +99,6 @@ def delete(inventario_id: UUID, db: Session = Depends(get_db)):
     crud = InventarioCRUD(db)
     inv = crud.obtener_inventario(inventario_id)
     if not inv:
-        raise HTTPException(status_code=404, detail="Inventario no encontrado")
+        raise NotFoundError("Inventario no encontrado")
     crud.eliminar_inventario(inventario_id)
     return inv

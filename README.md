@@ -78,3 +78,47 @@ Asegúrate de ejecutarlo antes de subir cambios.
 ```bash
 black src/
 ```
+
+## Autenticación JWT
+
+La API implementa autenticación Bearer con JWT.
+
+### Variables de entorno JWT
+
+- `JWT_SECRET_KEY`: clave secreta para firmar tokens (obligatoria en producción).
+- `JWT_ALGORITHM`: algoritmo de firma (por defecto `HS256`).
+- `JWT_EXPIRE_MINUTES`: tiempo de expiración del token en minutos (por defecto `60`).
+
+### Flujo de login
+
+1. Hacer `POST /auth/login` con usuario y contraseña:
+
+```json
+{
+  "username": "admin",
+  "password": "admin123"
+}
+```
+
+2. La API responde un `access_token`.
+3. En rutas protegidas, enviar cabecera:
+
+```http
+Authorization: Bearer <access_token>
+```
+
+4. Puedes validar el token actual con `GET /auth/me`.
+
+## Política CORS
+
+La configuración CORS se controla por variables de entorno:
+
+- `CORS_ALLOW_ORIGINS`: lista separada por comas de orígenes permitidos.
+  - Ejemplo: `http://localhost:3000,http://127.0.0.1:5173`
+- `CORS_ALLOW_CREDENTIALS`: `true` o `false` (por defecto `true`).
+
+Reglas aplicadas:
+
+- Cuando se usan credenciales, no se permite comodín global en producción.
+- Se habilitan métodos necesarios: `GET, POST, PUT, PATCH, DELETE, OPTIONS`.
+- Se habilitan cabeceras necesarias, incluyendo `Authorization`.
