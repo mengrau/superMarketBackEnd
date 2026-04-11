@@ -11,7 +11,6 @@ pydantic-settings==2.10.1
 email-validator==2.3.0
 
 # Password Hashing and Security
-passlib[bcrypt]==1.7.4  # Password hashing with bcrypt support
 bcrypt>=4.1.0  # Secure password hashing
 
 # Additional Utilities

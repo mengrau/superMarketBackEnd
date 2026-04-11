@@ -1,4 +1,0 @@
-# Herramientas de desarrollo y CI
-pytest>=7.0.0
-ruff>=0.1.0
-pip-audit>=2.6.0

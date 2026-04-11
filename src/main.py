@@ -5,6 +5,8 @@ arranque e inicia el menú de consola cuando se ejecuta directamente.
 """
 
 import os
+import logging
+from contextlib import asynccontextmanager
 
 from api import auth as auth_api
 from api import cliente
@@ -19,9 +21,9 @@ from api import usuario
 from api import factura
 from api import rol
 
-from auth.security import get_current_active_user
-from core.exception_handlers import register_exception_handlers
-from database.config import create_tables
+from core.auth import get_current_active_user
+from core.error_handlers import register_exception_handlers
+from core.config import create_tables
 
 try:
     from database.seeder_config import RUN_SEEDERS_ON_STARTUP
@@ -31,13 +33,18 @@ from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-def _as_bool(value: str, default: bool) -> bool:
+logger = logging.getLogger(__name__)
+
+
+def _as_bool(value: str | None, default: bool) -> bool:
+    """Convertir un valor de entorno a booleano."""
     if value is None:
         return default
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _get_cors_origins() -> list[str]:
+    """Obtener la lista de orígenes permitidos para CORS desde variables de entorno."""
     raw_origins = os.getenv(
         "CORS_ALLOW_ORIGINS",
         "http://localhost:3000,http://127.0.0.1:3000",
@@ -46,12 +53,39 @@ def _get_cors_origins() -> list[str]:
     return origins or ["http://localhost:3000"]
 
 
+def _run_optional_seeders() -> None:
+    """Ejecutar seeders solo cuando esta habilitado explicitamente."""
+    if not RUN_SEEDERS_ON_STARTUP:
+        return
+
+    try:
+        from database.seeders import seed_database
+
+        logger.info("Ejecutando seeders de datos iniciales")
+        seed_database()
+    except Exception:
+        logger.exception("No fue posible ejecutar los seeders en el arranque")
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Gestionar inicializacion y cierre de recursos de la aplicacion."""
+    logger.info("Iniciando SuperMarket API")
+    logger.info("Sincronizando esquema de base de datos")
+    create_tables()
+    _run_optional_seeders()
+    logger.info("Sistema listo. Documentacion en /docs")
+    yield
+    logger.info("Cerrando SuperMarket API")
+
+
 app = FastAPI(
     title="SuperMarket API",
     description="API backend para gestión de supermercado",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 register_exception_handlers(app)
@@ -141,28 +175,9 @@ app.include_router(
 )
 
 
-@app.on_event("startup")
-async def startup_event():
-    print("Iniciando SuperMarket API...")
-    print("Configurando base de datos...")
-    create_tables()
-
-    # Ejecutar seeders si está habilitado
-    if RUN_SEEDERS_ON_STARTUP:
-        try:
-            print("Ejecutando seeders de datos de prueba...")
-            from database.seeders import seed_database
-
-            seed_database()
-        except Exception as e:
-            print(f"⚠️  Error al ejecutar seeders: {e}")
-
-    print("Sistema listo para usar.")
-    print("Documentación disponible en: http://localhost:8000/docs")
-
-
 @app.get("/", tags=["raíz"])
 async def root():
+    """Retornar metadatos básicos y rutas principales de la API."""
     return {
         "mensaje": "Bienvenido a SuperMarket API",
         "version": "1.0.0",
@@ -182,7 +197,8 @@ async def root():
     }
 
 
-def main():
+def main() -> None:
+    """Iniciar el menú de consola para consumir la API."""
     from menu import iniciar_menu
 
     iniciar_menu()

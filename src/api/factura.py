@@ -1,12 +1,14 @@
+"""Endpoints HTTP para el recurso factura."""
+
 from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from core.errors import BadRequestError, NotFoundError
+from core.exceptions import BadRequestError, NotFoundError
 from crud.factura_crud import FacturaCRUD
-from database.config import get_db
+from core.config import get_db
 from models import (
     DetalleFacturaCreate,
     DetalleFacturaRead,

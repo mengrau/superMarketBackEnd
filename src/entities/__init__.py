@@ -1,3 +1,5 @@
+"""Paquete de entidades ORM del dominio SuperMarket."""
+
 from .usuario import Usuario as Usuario
 from .cliente import Cliente as Cliente
 from .empleado import Empleado as Empleado

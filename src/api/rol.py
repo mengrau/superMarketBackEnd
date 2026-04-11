@@ -1,3 +1,5 @@
+"""Endpoints HTTP para el recurso rol."""
+
 from typing import List
 from uuid import UUID
 
@@ -5,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from crud.rol_crud import RolCRUD
-from database.config import get_db
+from core.config import get_db
 from models import (
     RolCreate,
     RolRead,

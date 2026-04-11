@@ -1,9 +1,11 @@
+"""Endpoints HTTP para el recurso producto."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 
-from database.config import get_db
+from core.config import get_db
 from models import ProductoCreate, ProductoRead, ProductoUpdate
 from crud.producto_crud import ProductoCRUD
 
