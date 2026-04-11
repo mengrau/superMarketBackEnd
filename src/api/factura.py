@@ -1,9 +1,10 @@
 from typing import List
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
+from core.errors import BadRequestError, NotFoundError
 from crud.factura_crud import FacturaCRUD
 from database.config import get_db
 from models import (
@@ -37,7 +38,7 @@ def create(factura: FacturaCreate, db: Session = Depends(get_db)):
         db.refresh(nueva_factura)
         return nueva_factura
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.get("/", response_model=List[FacturaRead])
@@ -77,7 +78,7 @@ def get_one(factura_id: UUID, db: Session = Depends(get_db)):
     crud = FacturaCRUD(db)
     factura = crud.obtener_factura(factura_id)
     if not factura:
-        raise HTTPException(status_code=404, detail="Factura no encontrada")
+        raise NotFoundError("Factura no encontrada")
     return factura
 
 
@@ -89,10 +90,10 @@ def update(factura_id: UUID, datos: FacturaUpdate, db: Session = Depends(get_db)
             factura_id, **datos.model_dump(exclude_unset=True)
         )
         if not factura:
-            raise HTTPException(status_code=404, detail="Factura no encontrada")
+            raise NotFoundError("Factura no encontrada")
         return factura
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.patch("/{factura_id}/anular", response_model=FacturaRead)
@@ -100,7 +101,7 @@ def anular(factura_id: UUID, db: Session = Depends(get_db)):
     crud = FacturaCRUD(db)
     factura = crud.anular_factura(factura_id)
     if not factura:
-        raise HTTPException(status_code=404, detail="Factura no encontrada")
+        raise NotFoundError("Factura no encontrada")
     return factura
 
 
@@ -120,7 +121,7 @@ def add_detalle(
             precio_unitario=detalle.precio_unitario,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise BadRequestError(str(e))
 
 
 @router.get("/{factura_id}/detalles", response_model=List[DetalleFacturaRead])
@@ -128,7 +129,7 @@ def get_detalles(factura_id: UUID, db: Session = Depends(get_db)):
     """Lista todos los detalles de una factura."""
     crud = FacturaCRUD(db)
     if not crud.obtener_factura(factura_id):
-        raise HTTPException(status_code=404, detail="Factura no encontrada")
+        raise NotFoundError("Factura no encontrada")
     return crud.obtener_detalles_por_factura(factura_id)
 
 
@@ -138,7 +139,7 @@ def get_detalle(detalle_id: UUID, db: Session = Depends(get_db)):
     crud = FacturaCRUD(db)
     detalle = crud.obtener_detalle(detalle_id)
     if not detalle:
-        raise HTTPException(status_code=404, detail="Detalle no encontrado")
+        raise NotFoundError("Detalle no encontrado")
     return detalle
 
 
@@ -148,5 +149,5 @@ def delete_detalle(detalle_id: UUID, db: Session = Depends(get_db)):
     crud = FacturaCRUD(db)
     ok = crud.eliminar_detalle(detalle_id)
     if not ok:
-        raise HTTPException(status_code=404, detail="Detalle no encontrado")
+        raise NotFoundError("Detalle no encontrado")
     return {"mensaje": "Detalle eliminado correctamente"}

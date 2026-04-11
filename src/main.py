@@ -4,6 +4,9 @@ Registra todos los routers de FastAPI, configura CORS, crea las tablas en el
 arranque e inicia el menú de consola cuando se ejecuta directamente.
 """
 
+import os
+
+from api import auth as auth_api
 from api import cliente
 from api import compra_proveedor
 from api import empleado
@@ -16,9 +19,32 @@ from api import usuario
 from api import factura
 from api import rol
 
+from auth.security import get_current_active_user
+from core.exception_handlers import register_exception_handlers
 from database.config import create_tables
-from fastapi import FastAPI
+
+try:
+    from database.seeder_config import RUN_SEEDERS_ON_STARTUP
+except ImportError:
+    RUN_SEEDERS_ON_STARTUP = False
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+
+def _as_bool(value: str, default: bool) -> bool:
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _get_cors_origins() -> list[str]:
+    raw_origins = os.getenv(
+        "CORS_ALLOW_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    )
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    return origins or ["http://localhost:3000"]
+
 
 app = FastAPI(
     title="SuperMarket API",
@@ -28,33 +54,91 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+register_exception_handlers(app)
+
+cors_allow_credentials = _as_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), True)
+cors_origins = _get_cors_origins()
+
+if cors_allow_credentials and "*" in cors_origins:
+    cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=cors_allow_credentials,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin"],
 )
 
-app.include_router(cliente.router, prefix="/clientes", tags=["Clientes"])
-app.include_router(empleado.router, prefix="/empleados", tags=["Empleados"])
-app.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
-app.include_router(proveedor.router, prefix="/proveedores", tags=["Proveedores"])
-app.include_router(producto.router, prefix="/productos", tags=["Productos"])
-app.include_router(sucursal.router, prefix="/sucursales", tags=["Sucursales"])
+auth_dependencies = [Depends(get_current_active_user)]
+
+app.include_router(auth_api.router, prefix="/auth", tags=["Auth"])
+app.include_router(
+    cliente.router,
+    prefix="/clientes",
+    tags=["Clientes"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    empleado.router,
+    prefix="/empleados",
+    tags=["Empleados"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    usuario.router,
+    prefix="/usuarios",
+    tags=["Usuarios"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    proveedor.router,
+    prefix="/proveedores",
+    tags=["Proveedores"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    producto.router,
+    prefix="/productos",
+    tags=["Productos"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    sucursal.router,
+    prefix="/sucursales",
+    tags=["Sucursales"],
+    dependencies=auth_dependencies,
+)
 app.include_router(
     tipo_producto.router,
     prefix="/tipos-producto",
     tags=["Tipos de Producto"],
+    dependencies=auth_dependencies,
 )
-app.include_router(inventario.router, prefix="/inventarios", tags=["Inventarios"])
+app.include_router(
+    inventario.router,
+    prefix="/inventarios",
+    tags=["Inventarios"],
+    dependencies=auth_dependencies,
+)
 app.include_router(
     compra_proveedor.router,
     prefix="/compras-proveedor",
     tags=["Compras Proveedor"],
+    dependencies=auth_dependencies,
 )
-app.include_router(factura.router, prefix="/facturas", tags=["Facturas"])
-app.include_router(rol.router, prefix="/roles", tags=["Roles"])
+app.include_router(
+    factura.router,
+    prefix="/facturas",
+    tags=["Facturas"],
+    dependencies=auth_dependencies,
+)
+app.include_router(
+    rol.router,
+    prefix="/roles",
+    tags=["Roles"],
+    dependencies=auth_dependencies,
+)
 
 
 @app.on_event("startup")
@@ -62,6 +146,17 @@ async def startup_event():
     print("Iniciando SuperMarket API...")
     print("Configurando base de datos...")
     create_tables()
+
+    # Ejecutar seeders si está habilitado
+    if RUN_SEEDERS_ON_STARTUP:
+        try:
+            print("Ejecutando seeders de datos de prueba...")
+            from database.seeders import seed_database
+
+            seed_database()
+        except Exception as e:
+            print(f"⚠️  Error al ejecutar seeders: {e}")
+
     print("Sistema listo para usar.")
     print("Documentación disponible en: http://localhost:8000/docs")
 
