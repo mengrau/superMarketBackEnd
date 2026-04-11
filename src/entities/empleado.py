@@ -1,3 +1,5 @@
+"""Entidad ORM para empleado."""
+
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from entities import Usuario

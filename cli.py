@@ -1,50 +1,83 @@
 #!/usr/bin/env python
 """
-Script CLI para ejecutar seeders de base de datos.
-Uso: python cli.py <comando>
+Comandos de mantenimiento para base de datos.
+
+Uso:
+    python cli.py <comando>
 """
 
-import sys
 import os
+import sys
+from collections.abc import Callable
 
-# Agregar el directorio src al path para resolver imports correctamente
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+SRC_PATH = os.path.join(PROJECT_ROOT, "src")
+
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
 
 
-def main():
-    if len(sys.argv) < 2:
-        print("Uso: python cli.py COMANDO")
-        print("\nComandos disponibles:")
-        print("  migrate       - Aplicar migraciones pendientes")
-        print("  seed          - Ejecutar seeders para popular la BD")
-        print("  bootstrap-db  - Aplicar migraciones y luego ejecutar seeders")
-        sys.exit(1)
+CommandHandler = Callable[[], None]
 
-    comando = sys.argv[1]
 
-    if comando == "migrate":
-        print("Aplicando migraciones...")
-        from database.bootstrap import run_migrations
+def _print_help() -> None:
+    """Mostrar ayuda de uso de la CLI."""
+    print("Uso: python cli.py COMANDO")
+    print("\nComandos disponibles:")
+    print("  migrate       - Aplicar migraciones pendientes")
+    print("  seed          - Ejecutar seeders para popular la BD")
+    print("  bootstrap-db  - Aplicar migraciones y luego ejecutar seeders")
 
-        run_migrations()
-    elif comando == "seed":
-        print("Ejecutando seeders...")
-        from database.seeders import seed_database
 
-        seed_database()
-    elif comando == "bootstrap-db":
-        print("Actualizando esquema y ejecutando seeders...")
-        from database.bootstrap import bootstrap_database
+def _run_migrate() -> None:
+    """Aplicar migraciones de Alembic."""
+    print("Aplicando migraciones...")
+    from database.bootstrap import run_migrations
 
-        bootstrap_database()
-    else:
+    run_migrations()
+
+
+def _run_seed() -> None:
+    """Ejecutar seeders idempotentes."""
+    print("Ejecutando seeders...")
+    from database.seeders import seed_database
+
+    seed_database()
+
+
+def _run_bootstrap_db() -> None:
+    """Aplicar migraciones y luego seeders."""
+    print("Actualizando esquema y ejecutando seeders...")
+    from database.bootstrap import bootstrap_database
+
+    bootstrap_database()
+
+
+COMMANDS: dict[str, CommandHandler] = {
+    "migrate": _run_migrate,
+    "seed": _run_seed,
+    "bootstrap-db": _run_bootstrap_db,
+}
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Punto de entrada de la CLI."""
+    args = argv if argv is not None else sys.argv[1:]
+    if not args:
+        _print_help()
+        return 1
+
+    comando = args[0]
+    action = COMMANDS.get(comando)
+    if action is None:
         print(f"Comando desconocido: {comando}")
-        print("\nComandos disponibles:")
-        print("  migrate       - Aplicar migraciones pendientes")
-        print("  seed          - Ejecutar seeders para popular la BD")
-        print("  bootstrap-db  - Aplicar migraciones y luego ejecutar seeders")
-        sys.exit(1)
+        _print_help()
+        return 1
+
+    action()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

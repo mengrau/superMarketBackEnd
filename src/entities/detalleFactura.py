@@ -1,9 +1,11 @@
+"""Entidad ORM para detalleFactura."""
+
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, DateTime, ForeignKey, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database.config import Base
+from core.config import Base
 
 
 class DetalleFactura(Base):

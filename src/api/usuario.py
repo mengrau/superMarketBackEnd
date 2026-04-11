@@ -1,7 +1,9 @@
+"""Endpoints HTTP para el recurso usuario."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
-from database.config import get_db
+from core.config import get_db
 from models import UsuarioCreate, UsuarioRead, UsuarioUpdate
 from crud.usuario_crud import UsuarioCRUD
 from entities.usuario import Usuario

@@ -1,3 +1,5 @@
+"""Pruebas smoke para validar el arranque basico de la API."""
+
 import sys
 from pathlib import Path
 

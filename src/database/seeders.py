@@ -6,12 +6,13 @@ Ejecutar: python -m src.database.seeders
 import uuid
 from decimal import Decimal
 from typing import Iterable
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
-from database.config import SessionLocal
-from auth.security import hash_password
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from core.config import SessionLocal
+from core.auth import hash_password
 from entities.rol import Rol
 from entities.usuario import Usuario
 from entities.sucursal import Sucursal
@@ -255,84 +256,84 @@ def crear_productos(
     productos_data = [
         {
             "nombre": "Leche Entera 1L",
-            "tipo_idx": 2,  # Lácteos
+            "tipo_idx": 2,
             "proveedor_idx": 0,
             "precio": Decimal("2.50"),
             "codigo_barras": "7501234567890",
         },
         {
             "nombre": "Pan Integral",
-            "tipo_idx": 0,  # Alimentos
+            "tipo_idx": 0,
             "proveedor_idx": 0,
             "precio": Decimal("1.50"),
             "codigo_barras": "7501234567891",
         },
         {
             "nombre": "Queso Cheddar 200g",
-            "tipo_idx": 2,  # Lácteos
+            "tipo_idx": 2,
             "proveedor_idx": 0,
             "precio": Decimal("4.99"),
             "codigo_barras": "7501234567892",
         },
         {
             "nombre": "Yogurt Natural 125g",
-            "tipo_idx": 2,  # Lácteos
+            "tipo_idx": 2,
             "proveedor_idx": 0,
             "precio": Decimal("1.20"),
             "codigo_barras": "7501234567893",
         },
         {
             "nombre": "Pollo Fresco kg",
-            "tipo_idx": 3,  # Carnes
+            "tipo_idx": 3,
             "proveedor_idx": 2,
             "precio": Decimal("8.50"),
             "codigo_barras": "7501234567894",
         },
         {
             "nombre": "Atún en Lata",
-            "tipo_idx": 3,  # Carnes y Pescados
+            "tipo_idx": 3,
             "proveedor_idx": 2,
             "precio": Decimal("2.80"),
             "codigo_barras": "7501234567895",
         },
         {
             "nombre": "Manzanas kg",
-            "tipo_idx": 4,  # Frutas y Verduras
+            "tipo_idx": 4,
             "proveedor_idx": 2,
             "precio": Decimal("3.00"),
             "codigo_barras": "7501234567896",
         },
         {
             "nombre": "Lechuga Fresca",
-            "tipo_idx": 4,  # Frutas y Verduras
+            "tipo_idx": 4,
             "proveedor_idx": 2,
             "precio": Decimal("1.75"),
             "codigo_barras": "7501234567897",
         },
         {
             "nombre": "Detergente Líquido",
-            "tipo_idx": 5,  # Limpieza
+            "tipo_idx": 5,
             "proveedor_idx": 1,
             "precio": Decimal("3.99"),
             "codigo_barras": "7501234567898",
         },
         {
             "nombre": "Jabón de Manos",
-            "tipo_idx": 6,  # Higiene
+            "tipo_idx": 6,
             "proveedor_idx": 1,
             "precio": Decimal("2.50"),
             "codigo_barras": "7501234567899",
         },
         {
             "nombre": "Agua Embotellada 6 pack",
-            "tipo_idx": 1,  # Bebidas
+            "tipo_idx": 1,
             "proveedor_idx": 1,
             "precio": Decimal("1.99"),
             "codigo_barras": "7501234567800",
         },
         {
             "nombre": "Refresco Gaseoso",
-            "tipo_idx": 1,  # Bebidas
+            "tipo_idx": 1,
             "proveedor_idx": 1,
             "precio": Decimal("2.20"),
             "codigo_barras": "7501234567801",
@@ -511,8 +512,8 @@ def crear_empleados(
     return empleados
 
 
-def seed_database():
-    """Ejecutar todos los seeders."""
+def seed_database() -> None:
+    """Ejecutar todos los seeders de forma idempotente."""
     print("\n" + "=" * 60)
     print("INICIANDO SEEDERS DE BASE DE DATOS")
     print("=" * 60 + "\n")
@@ -520,7 +521,6 @@ def seed_database():
     db = SessionLocal()
 
     try:
-        # 1. Crear roles
         print("1. Creando Roles...")
         rol_admin = crear_rol(
             db,
@@ -545,37 +545,30 @@ def seed_database():
         )
         print()
 
-        # 2. Crear usuario administrador
         print("2. Creando Usuario Administrador...")
         usuario_admin = crear_usuario_admin(db, rol_admin)
         print()
 
-        # 3. Crear sucursales
         print("3. Creando Sucursales...")
         sucursales = crear_sucursales(db, usuario_admin)
         print()
 
-        # 4. Crear tipos de productos
         print("4. Creando Tipos de Productos...")
         tipos_producto = crear_tipos_producto(db)
         print()
 
-        # 5. Crear proveedores
         print("5. Creando Proveedores...")
         proveedores = crear_proveedores(db, usuario_admin)
         print()
 
-        # 6. Crear productos
         print("6. Creando Productos...")
         productos = crear_productos(db, tipos_producto, proveedores, usuario_admin)
         print()
 
-        # 7. Crear clientes
         print("7. Creando Clientes...")
         clientes = crear_clientes(db, usuario_admin)
         print()
 
-        # 8. Crear empleados
         print("8. Creando Empleados...")
         empleados = crear_empleados(db, rol_empleado, rol_gerente, usuario_admin)
         print()
