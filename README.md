@@ -14,7 +14,7 @@ Provee una API REST completa desarrollada en **FastAPI** para la administración
 
 ## Requisitos
 
-- Python 3.9+
+- Python 3.11+
 - PostgreSQL
 - FastAPI
 - SQLAlchemy
@@ -64,20 +64,46 @@ O directamente desde el menú principal, usa la **opción 13** para iniciar el s
 4. Actualizar el rol y confirmar el cambio consultando nuevamente la lista.
 5. Repetir para clientes, productos, empleados, etc.
 
+## Sincronización de BD y seeders
+
+El proyecto incluye comandos para mantener el esquema actualizado y cargar datos iniciales idempotentes.
+
+```bash
+python cli.py migrate
+python cli.py seed
+python cli.py bootstrap-db
+```
+
+- `migrate`: aplica migraciones de Alembic hasta `head`.
+- `seed`: inserta datos base sin duplicar registros existentes.
+- `bootstrap-db`: ejecuta migraciones y luego seeders.
+
 ## Observaciones
 
 Consulta la documentación interactiva en `http://localhost:8000/docs` para la lista completa de endpoints, ejemplos y esquema de datos.
 
 ## Mantenimiento
 
-Para mantener el estándar de código del proyecto, utilizamos el formateador **Black**.
-Asegúrate de ejecutarlo antes de subir cambios.
+Para mantener el estándar de código del proyecto, utiliza Ruff para lint y formato.
 
-### Comando para formatear el código:
+### Comandos recomendados:
 
 ```bash
-black src/
+ruff check src tests
+ruff format src tests
+pytest -q
 ```
+
+## CI/CD
+
+El workflow de CI ejecuta, en la rama `DEV`:
+
+- Migraciones y seed inicial (`python cli.py bootstrap-db`)
+- Lint y validación de formato con Ruff
+- Pruebas con Pytest
+- Auditoría de dependencias con pip-audit
+
+El workflow de CD se dispara únicamente cuando el CI de `DEV` finaliza exitosamente.
 
 ## Autenticación JWT
 
