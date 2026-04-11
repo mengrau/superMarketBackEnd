@@ -4,10 +4,10 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from core.config import get_db
@@ -17,45 +17,37 @@ from core.exceptions import UnauthorizedError
 logger = logging.getLogger(__name__)
 
 
-def _build_password_context() -> CryptContext | None:
-    """Inicializar contexto de hashing basado en bcrypt."""
-    try:
-        return CryptContext(schemes=["bcrypt"], deprecated="auto")
-    except Exception:
-        logger.exception("No se pudo inicializar bcrypt; se habilita fallback inseguro")
-        return None
-
-
-def _truncate_for_bcrypt(password: str) -> str:
-    """Ajustar longitud al límite de 72 bytes definido por bcrypt."""
+def _normalize_bcrypt_input(password: str) -> bytes:
+    """Normalizar contraseña al límite de 72 bytes requerido por bcrypt."""
     password_bytes = password.encode("utf-8")
-    if len(password_bytes) <= 72:
-        return password
-    return password_bytes[:72].decode("utf-8", errors="ignore")
+    return password_bytes[:72]
 
 
-pwd_context = _build_password_context()
-
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-only-change-this-secret")
+SECRET_KEY = os.getenv(
+    "JWT_SECRET_KEY", "dev-only-change-this-secret-at-least-32-bytes"
+)
 ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+
+if ALGORITHM.upper().startswith("HS") and len(SECRET_KEY.encode("utf-8")) < 32:
+    logger.warning(
+        "JWT_SECRET_KEY debería tener al menos 32 bytes para %s",
+        ALGORITHM,
+    )
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def hash_password(password: str) -> str:
-    """Generar hash de contraseña con bcrypt o fallback de desarrollo."""
-    if pwd_context is None:
-        logger.warning("Hashing en modo fallback plaintext; no usar en producción")
-        return f"plaintext:{password}"
-
-    normalized_password = _truncate_for_bcrypt(password)
+    """Generar hash seguro de contraseña usando bcrypt nativo."""
+    normalized_password = _normalize_bcrypt_input(password)
 
     try:
-        return pwd_context.hash(normalized_password)
+        hashed = bcrypt.hashpw(normalized_password, bcrypt.gensalt())
+        return hashed.decode("utf-8")
     except Exception:
-        logger.exception("Fallo al hashear contraseña; se usa fallback plaintext")
-        return f"plaintext:{password}"
+        logger.exception("Fallo al hashear contraseña")
+        raise
 
 
 def verify_password(password: str, hashed: str) -> bool:
@@ -63,13 +55,10 @@ def verify_password(password: str, hashed: str) -> bool:
     if hashed.startswith("plaintext:"):
         return password == hashed.replace("plaintext:", "")
 
-    if pwd_context is None:
-        return False
-
-    normalized_password = _truncate_for_bcrypt(password)
+    normalized_password = _normalize_bcrypt_input(password)
 
     try:
-        return pwd_context.verify(normalized_password, hashed)
+        return bcrypt.checkpw(normalized_password, hashed.encode("utf-8"))
     except Exception:
         logger.exception("Fallo al verificar contraseña")
         return False
