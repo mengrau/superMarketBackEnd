@@ -1,3 +1,5 @@
+"""Configuracion de entorno para migraciones Alembic."""
+
 import sys
 import os
 
@@ -7,8 +9,8 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-from database.config import Base
-from database.config import DATABASE_URL
+from core.config import Base
+from core.config import DATABASE_URL
 
 import entities  # noqa: F401
 

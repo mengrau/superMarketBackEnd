@@ -1,9 +1,11 @@
+"""Endpoints HTTP para el recurso sucursal."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
 
-from database.config import get_db
+from core.config import get_db
 from models import SucursalCreate, SucursalRead, SucursalUpdate
 from crud.sucursal_crud import SucursalCRUD
 

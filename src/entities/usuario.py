@@ -1,10 +1,12 @@
+"""Entidad ORM para usuario."""
+
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database.config import Base
-from auth.security import hash_password, verify_password
+from core.config import Base
+from core.auth import hash_password, verify_password
 
 
 class Usuario(Base):

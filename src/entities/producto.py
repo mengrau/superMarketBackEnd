@@ -1,9 +1,11 @@
+"""Entidad ORM para producto."""
+
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Numeric
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from database.config import Base
+from core.config import Base
 
 
 class Producto(Base):

@@ -1,9 +1,11 @@
+"""Endpoints HTTP para el recurso cliente."""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from uuid import UUID
 from typing import List
 
-from database.config import get_db
+from core.config import get_db
 from models import ClienteCreate, ClienteUpdate, ClienteRead
 from crud.cliente_crud import ClienteCRUD
 

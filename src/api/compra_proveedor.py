@@ -1,3 +1,5 @@
+"""Endpoints HTTP para el recurso compra proveedor."""
+
 from typing import List
 from uuid import UUID
 
@@ -5,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from crud.compra_proveedor_crud import CompraProveedorCRUD
-from database.config import get_db
+from core.config import get_db
 from models import (
     CompraProveedorCreate,
     CompraProveedorRead,

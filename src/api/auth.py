@@ -1,16 +1,18 @@
+"""Endpoints HTTP para el recurso auth."""
+
 from datetime import timedelta
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from auth.security import (
+from core.auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     create_access_token,
     get_current_active_user,
 )
-from core.errors import UnauthorizedError
+from core.exceptions import UnauthorizedError
 from crud.usuario_crud import UsuarioCRUD
-from database.config import get_db
+from core.config import get_db
 from models import LoginRequest, TokenResponse, UsuarioRead
 
 router = APIRouter()

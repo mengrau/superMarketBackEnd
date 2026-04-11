@@ -1,97 +1,120 @@
-# SuperMarket API
+# SuperMarket BackEnd
 
-Sistema backend para la gestión integral de una cadena de supermercados.
-Provee una API REST completa desarrollada en **FastAPI** para la administración de clientes, empleados, inventario, productos, sucursales, compras a proveedores y facturación en general.
+API REST para gestión de supermercado construida con FastAPI, SQLAlchemy y PostgreSQL.
+Incluye autenticación JWT, migraciones con Alembic, seeders idempotentes y pruebas automatizadas.
 
-## Características
+## Propósito del repositorio
 
-- Gestión de Usuarios y Roles.
-- Gestión de Inventario Multi-Sucursal (control de stock, límites mínimos).
-- Gestión de Compras a Proveedores (integración con subida de inventario).
-- Gestión de Facturación (Cabeceras y Detalles).
-- Soft Delete integrado en todas las entidades principales.
-- Menú de Interfaz de Comando (CLI) que consume la API REST vía HTTP.
+Este repositorio implementa el backend de un sistema de supermercados con operaciones para:
+
+- autenticación y autorización por roles
+- usuarios y empleados
+- clientes, proveedores y productos
+- inventario por sucursal
+- compras a proveedor y facturación
+
+El objetivo es mantener una base de código estable para desarrollo, CI/CD y despliegue.
+
+## Estructura del proyecto
+
+```text
+superMarketBackEnd/
+  .github/workflows/           # CI/CD
+  alembic.ini                  # Configuración de Alembic
+  bootstrap_db.py              # Migraciones + seeders
+  migrate_db.py                # Solo migraciones
+  seed_db.py                   # Solo seeders
+  src/
+    api/                       # Endpoints FastAPI
+    core/                      # Núcleo (config, auth, errores, respuestas)
+    crud/                      # Reglas de acceso a datos
+    database/                  # Bootstrap/migraciones/seeders
+    entities/                  # Modelos ORM
+    migrations/                # Entorno y versiones de Alembic
+    main.py                    # App FastAPI
+    menu.py                    # Cliente de consola para consumir la API
+    models.py                  # Schemas Pydantic
+  tests/
+```
 
 ## Requisitos
 
-- Python 3.9+
-- PostgreSQL
-- FastAPI
-- SQLAlchemy
+- Python 3.11 o superior
+- PostgreSQL 15+ (o compatible)
+- pip
 
-## Cómo ejecutar
+## Instalación
 
-### 1. Instalar dependencias
+1. Crear y activar entorno virtual.
+2. Instalar dependencias.
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Iniciar la API REST
+## Configuración
 
-Desde la raíz del proyecto:
+Definir variables de entorno (archivo `.env` recomendado):
+
+- `DATABASE_URL`: cadena de conexión a PostgreSQL.
+- `SSL_MODE`: `require` (Neon/producción) o `disable` (local/CI).
+- `JWT_SECRET_KEY`: clave de firma JWT.
+- `JWT_ALGORITHM`: algoritmo de firma, por defecto `HS256`.
+- `JWT_EXPIRE_MINUTES`: expiración del token en minutos, por defecto `60`.
+- `CORS_ALLOW_ORIGINS`: orígenes permitidos separados por coma.
+- `CORS_ALLOW_CREDENTIALS`: `true` o `false`.
+- `RUN_SEEDERS_ON_STARTUP`: `true` o `false` para ejecutar seeders al iniciar API.
+- `HTTP_CLIENT_BASE_URL`: URL base usada por `menu.py`.
+
+## Ejecución
+
+Levantar API:
 
 ```bash
-uvicorn src.main:app --reload
+uvicorn main:app --app-dir src --reload
 ```
 
-La API quedará disponible en `http://localhost:8000`.  
-Documentación interactiva en: `http://localhost:8000/docs`
+URLs principales:
 
-### 3. Iniciar el menú de consola
+- API: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
 
-En otra terminal (con la API ya corriendo):
+Cliente de consola (opcional):
 
 ```bash
 python src/main.py
 ```
 
-O directamente desde el menú principal, usa la **opción 13** para iniciar el servidor y luego ejecuta el menú en otra terminal.
+## Migraciones y seeders
 
-> **Nota:** El menú requiere que la API esté corriendo en `http://localhost:8000`.  
-> Para apuntar a otra URL, define la variable de entorno `HTTP_CLIENT_BASE_URL`:
->
-> ```bash
-> set HTTP_CLIENT_BASE_URL=http://mi-servidor:8000   # Windows
-> export HTTP_CLIENT_BASE_URL=http://mi-servidor:8000 # Linux/Mac
-> ```
-
-## Pruebas manuales rápidas
-
-1. Iniciar la API y abrir `http://localhost:8000/docs`.
-2. Crear un rol vía el menú (opción 12 → opción 2) o via `/docs`.
-3. Listar roles con la opción 12 → opción 1 y verificar que aparece el registro creado.
-4. Actualizar el rol y confirmar el cambio consultando nuevamente la lista.
-5. Repetir para clientes, productos, empleados, etc.
-
-## Observaciones
-
-Consulta la documentación interactiva en `http://localhost:8000/docs` para la lista completa de endpoints, ejemplos y esquema de datos.
-
-## Mantenimiento
-
-Para mantener el estándar de código del proyecto, utilizamos el formateador **Black**.
-Asegúrate de ejecutarlo antes de subir cambios.
-
-### Comando para formatear el código:
+El flujo recomendado es:
 
 ```bash
-black src/
+python migrate_db.py
+python seed_db.py
 ```
+
+O en un solo paso:
+
+```bash
+python bootstrap_db.py
+```
+
+### Comportamiento de seeders
+
+- Idempotentes: no duplican datos si ya existen.
+- Basados en claves de negocio (username, nit, identificación, código de barras, etc.).
+- Mantienen relación de auditoría por `id_usuario_creacion`.
+- Crean usuario administrador por defecto:
+  - usuario: `admin`
+  - contraseña: `admin123`
 
 ## Autenticación JWT
 
-La API implementa autenticación Bearer con JWT.
+### Login
 
-### Variables de entorno JWT
-
-- `JWT_SECRET_KEY`: clave secreta para firmar tokens (obligatoria en producción).
-- `JWT_ALGORITHM`: algoritmo de firma (por defecto `HS256`).
-- `JWT_EXPIRE_MINUTES`: tiempo de expiración del token en minutos (por defecto `60`).
-
-### Flujo de login
-
-1. Hacer `POST /auth/login` con usuario y contraseña:
+`POST /auth/login`
 
 ```json
 {
@@ -100,25 +123,63 @@ La API implementa autenticación Bearer con JWT.
 }
 ```
 
-2. La API responde un `access_token`.
-3. En rutas protegidas, enviar cabecera:
+Respuesta: `access_token`, `token_type`, `expires_in`.
+
+### Uso de token
+
+Enviar cabecera:
 
 ```http
 Authorization: Bearer <access_token>
 ```
 
-4. Puedes validar el token actual con `GET /auth/me`.
+Validación de sesión actual:
 
-## Política CORS
+- `GET /auth/me`
 
-La configuración CORS se controla por variables de entorno:
+## Pruebas y calidad
 
-- `CORS_ALLOW_ORIGINS`: lista separada por comas de orígenes permitidos.
-  - Ejemplo: `http://localhost:3000,http://127.0.0.1:5173`
-- `CORS_ALLOW_CREDENTIALS`: `true` o `false` (por defecto `true`).
+Ejecutar validaciones locales:
 
-Reglas aplicadas:
+```bash
+ruff check src tests
+ruff format src tests --check
+pytest -q
+```
 
-- Cuando se usan credenciales, no se permite comodín global en producción.
-- Se habilitan métodos necesarios: `GET, POST, PUT, PATCH, DELETE, OPTIONS`.
-- Se habilitan cabeceras necesarias, incluyendo `Authorization`.
+## CI/CD
+
+### CI
+
+En rama `DEV` se ejecuta:
+
+- instalación de dependencias
+- `python bootstrap_db.py`
+- lint y formato con Ruff
+- pruebas con Pytest
+- auditoría de dependencias con pip-audit
+
+### CD
+
+Se activa al completar CI exitosamente en `DEV` y publica imagen Docker en GHCR.
+
+## Endpoints principales
+
+- `/auth`
+- `/usuarios`
+- `/empleados`
+- `/clientes`
+- `/proveedores`
+- `/productos`
+- `/tipos-producto`
+- `/sucursales`
+- `/inventarios`
+- `/compras-proveedor`
+- `/facturas`
+- `/roles`
+
+## Notas de mantenimiento
+
+- Mantener cambios de esquema vía Alembic.
+- Evitar credenciales por defecto en entornos productivos.
+- Ejecutar `bootstrap_db.py` en ambientes nuevos antes de pruebas funcionales.

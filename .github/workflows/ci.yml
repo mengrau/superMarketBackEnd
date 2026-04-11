@@ -59,7 +59,7 @@ jobs:
           pip install ruff pip-audit pytest
 
       - name: Actualizar esquema + seed inicial (idempotente)
-        run: python cli.py bootstrap-db
+        run: python bootstrap_db.py
 
       - name: Verificar datos iniciales de roles
         run: |
