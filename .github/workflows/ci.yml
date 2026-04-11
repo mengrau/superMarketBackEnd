@@ -1,11 +1,11 @@
-# Pipeline CI para SuperMarketBackEnd (DEV, QA y PROD)
+# Pipeline CI para SuperMarketBackEnd (solo DEV)
 name: CI - SuperMarketBackEnd
 
 on:
   push:
-    branches: [DEV, QA, PROD]
+    branches: [DEV]
   pull_request:
-    branches: [DEV, QA, PROD]
+    branches: [DEV]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -31,7 +31,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://neondb_owner:npg_IDUrXJzZ72Nh@ep-noisy-leaf-ai0c2c0h-pooler.c-4.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      DATABASE_URL: postgresql://test:test@localhost:5432/supermarket_test
       SSL_MODE: disable
       PYTHONUNBUFFERED: "1"
 
@@ -58,8 +58,8 @@ jobs:
           pip install -r requirements.txt
           pip install ruff pip-audit pytest
 
-      - name: Sincronizar esquema con DB (Alembic)
-        run: alembic upgrade head
+      - name: Actualizar esquema + seed inicial (idempotente)
+        run: python cli.py bootstrap-db
 
       - name: Verificar datos iniciales de roles
         run: |

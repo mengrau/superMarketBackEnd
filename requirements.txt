@@ -10,11 +10,13 @@ pydantic==2.11.10
 pydantic-settings==2.10.1
 email-validator==2.3.0
 
+# Password Hashing and Security
+passlib[bcrypt]==1.7.4  # Password hashing with bcrypt support
+bcrypt>=4.1.0  # Secure password hashing
+
 # Additional Utilities
 python-dotenv==1.1.1  # Environment variables
 typing-extensions==4.15.0  # Type hints support
-passlib==1.7.4
-bcrypt==5.0.0
 
 # APIs utilities
 fastapi==0.135.2
@@ -22,4 +24,5 @@ uvicorn[standard]==0.38.0
 python-multipart==0.0.22
 requests==2.33.0
 httpx==0.28.1
+PyJWT==2.12.0
 
