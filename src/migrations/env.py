@@ -12,7 +12,6 @@ from alembic import context
 from core.config import Base
 from core.config import DATABASE_URL
 
-import entities
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
