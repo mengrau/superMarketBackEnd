@@ -23,7 +23,7 @@ def create(cliente: ClienteCreate, db: Session = Depends(get_db)):
             email=cliente.email,
             telefono=cliente.telefono,
             direccion=cliente.direccion,
-            id_usuario_creacion=cliente.id_usuario_creacion,
+            id_usuario_creacion=getattr(cliente, "id_usuario_creacion", None),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -49,7 +49,9 @@ def update(cliente_id: UUID, cliente: ClienteUpdate, db: Session = Depends(get_d
     crud = ClienteCRUD(db)
     try:
         updated = crud.actualizar_cliente(
-            cliente_id, **cliente.model_dump(exclude_unset=True)
+            cliente_id,
+            id_usuario_edicion=getattr(cliente, "id_usuario_edicion", None),
+            **cliente.model_dump(exclude_unset=True, exclude={"id_usuario_edicion"}),
         )
         if not updated:
             raise HTTPException(status_code=404, detail="Cliente no encontrado")

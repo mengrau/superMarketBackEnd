@@ -66,6 +66,7 @@ class ClienteBase(BaseModel):
     """Campos base del Cliente."""
 
     nombre: str = Field(..., max_length=120)
+    tipo_identificacion: str = Field(..., max_length=5)
     identificacion: str = Field(..., max_length=50)
     email: Optional[str] = Field(None, max_length=120)
     telefono: Optional[str] = Field(None, max_length=20)
@@ -74,16 +75,18 @@ class ClienteBase(BaseModel):
 
 
 class ClienteCreate(ClienteBase):
-    pass
+    id_usuario_creacion: Optional[UUID] = None
 
 
 class ClienteUpdate(BaseModel):
-    nombre: Optional[str]
-    identificacion: Optional[str]
-    email: Optional[str]
-    telefono: Optional[str]
-    direccion: Optional[str]
-    estado: Optional[bool]
+    nombre: Optional[str] = Field(None, max_length=120)
+    tipo_identificacion: Optional[str] = Field(None, max_length=5)
+    identificacion: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=120)
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=200)
+    estado: Optional[bool] = None
+    id_usuario_edicion: Optional[UUID] = None
 
 
 class ClienteRead(ClienteBase, AuditBase):
