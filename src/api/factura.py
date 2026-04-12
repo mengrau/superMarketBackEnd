@@ -22,6 +22,7 @@ router = APIRouter()
 
 @router.post("/", response_model=FacturaRead, status_code=201)
 def create(factura: FacturaCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = FacturaCRUD(db)
     try:
         nueva_factura = crud.crear_factura(
@@ -45,6 +46,7 @@ def create(factura: FacturaCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[FacturaRead])
 def list_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta list all."""
     crud = FacturaCRUD(db)
     return crud.obtener_facturas(skip=skip, limit=limit)
 
@@ -56,6 +58,7 @@ def get_by_cliente(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
+    """Ejecuta get by cliente."""
     crud = FacturaCRUD(db)
     return crud.obtener_facturas_por_cliente(
         id_cliente=cliente_id, skip=skip, limit=limit
@@ -69,6 +72,7 @@ def get_by_sucursal(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
+    """Ejecuta get by sucursal."""
     crud = FacturaCRUD(db)
     return crud.obtener_facturas_por_sucursal(
         id_sucursal=sucursal_id, skip=skip, limit=limit
@@ -77,6 +81,7 @@ def get_by_sucursal(
 
 @router.get("/{factura_id}", response_model=FacturaRead)
 def get_one(factura_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get one."""
     crud = FacturaCRUD(db)
     factura = crud.obtener_factura(factura_id)
     if not factura:
@@ -86,6 +91,7 @@ def get_one(factura_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{factura_id}", response_model=FacturaRead)
 def update(factura_id: UUID, datos: FacturaUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = FacturaCRUD(db)
     try:
         factura = crud.actualizar_factura(
@@ -100,6 +106,7 @@ def update(factura_id: UUID, datos: FacturaUpdate, db: Session = Depends(get_db)
 
 @router.patch("/{factura_id}/anular", response_model=FacturaRead)
 def anular(factura_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta anular."""
     crud = FacturaCRUD(db)
     factura = crud.anular_factura(factura_id)
     if not factura:

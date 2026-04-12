@@ -43,4 +43,5 @@ class Cliente(Base):
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 
     def __repr__(self):
+        """Ejecuta repr en Cliente."""
         return f"<Cliente {self.nombre}>"

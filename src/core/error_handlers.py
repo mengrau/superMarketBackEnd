@@ -45,6 +45,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        """Ejecuta app error handler."""
         return JSONResponse(
             status_code=exc.status_code,
             content=_build_error_payload(
@@ -59,6 +60,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def http_exception_handler(
         request: Request, exc: HTTPException
     ) -> JSONResponse:
+        """Ejecuta http exception handler."""
         detail = exc.detail
         message = detail if isinstance(detail, str) else "Error HTTP"
         return JSONResponse(
@@ -76,6 +78,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request,
         exc: RequestValidationError,
     ) -> JSONResponse:
+        """Ejecuta validation exception handler."""
         return JSONResponse(
             status_code=422,
             content=_build_error_payload(
@@ -90,6 +93,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def integrity_error_handler(
         request: Request, exc: IntegrityError
     ) -> JSONResponse:
+        """Ejecuta integrity error handler."""
         return JSONResponse(
             status_code=409,
             content=_build_error_payload(
@@ -102,6 +106,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+        """Ejecuta value error handler."""
         return JSONResponse(
             status_code=400,
             content=_build_error_payload(
@@ -115,6 +120,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def unhandled_exception_handler(
         request: Request, exc: Exception
     ) -> JSONResponse:
+        """Ejecuta unhandled exception handler."""
         return JSONResponse(
             status_code=500,
             content=_build_error_payload(

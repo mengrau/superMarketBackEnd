@@ -48,4 +48,5 @@ class CompraProveedor(Base):
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 
     def __repr__(self):
+        """Ejecuta repr en CompraProveedor."""
         return f"<CompraProveedor {self.id} total={self.total_compra}>"

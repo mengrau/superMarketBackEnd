@@ -16,6 +16,7 @@ depends_on = None
 
 
 def upgrade():
+    """Ejecuta upgrade."""
     op.add_column(
         "compras_proveedor",
         sa.Column(
@@ -28,4 +29,5 @@ def upgrade():
 
 
 def downgrade():
+    """Ejecuta downgrade."""
     op.drop_column("compras_proveedor", "id_sucursal")

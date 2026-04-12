@@ -24,6 +24,7 @@ _CONNECTION_ERROR_MSG = (
 
 
 def _raise_for_status(resp: requests.Response) -> None:
+    """Ejecuta raise for status."""
     if not resp.ok:
         try:
             detail = resp.json().get("detail", resp.text)
@@ -37,6 +38,7 @@ class _HTTPClient:
 
     @staticmethod
     def get(path: str, params: dict = None):
+        """Ejecuta get en _HTTPClient."""
         try:
             resp = requests.get(f"{BASE_URL}{path}", params=params, timeout=10)
         except requests.exceptions.ConnectionError:
@@ -46,6 +48,7 @@ class _HTTPClient:
 
     @staticmethod
     def post(path: str, body: dict):
+        """Ejecuta post en _HTTPClient."""
         try:
             resp = requests.post(f"{BASE_URL}{path}", json=body, timeout=10)
         except requests.exceptions.ConnectionError:
@@ -55,6 +58,7 @@ class _HTTPClient:
 
     @staticmethod
     def put(path: str, body: dict):
+        """Ejecuta put en _HTTPClient."""
         try:
             resp = requests.put(f"{BASE_URL}{path}", json=body, timeout=10)
         except requests.exceptions.ConnectionError:
@@ -64,6 +68,7 @@ class _HTTPClient:
 
     @staticmethod
     def patch(path: str, body: dict = None, params: dict = None):
+        """Ejecuta patch en _HTTPClient."""
         try:
             resp = requests.patch(
                 f"{BASE_URL}{path}", json=body, params=params, timeout=10
@@ -75,6 +80,7 @@ class _HTTPClient:
 
     @staticmethod
     def delete(path: str):
+        """Ejecuta delete en _HTTPClient."""
         try:
             resp = requests.delete(f"{BASE_URL}{path}", timeout=10)
         except requests.exceptions.ConnectionError:
@@ -87,10 +93,12 @@ http_client = _HTTPClient()
 
 
 def limpiar_pantalla():
+    """Ejecuta limpiar pantalla."""
     os.system("cls" if os.name == "nt" else "clear")
 
 
 def pausar():
+    """Ejecuta pausar."""
     input("\nPresiona Enter para continuar...")
 
 

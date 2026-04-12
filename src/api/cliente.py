@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.post("/", response_model=ClienteRead, status_code=201)
 def create(cliente: ClienteCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = ClienteCRUD(db)
     try:
         return crud.crear_cliente(
@@ -31,12 +32,14 @@ def create(cliente: ClienteCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[ClienteRead])
 def get_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta get all."""
     crud = ClienteCRUD(db)
     return crud.obtener_clientes(skip=skip, limit=limit)
 
 
 @router.get("/{cliente_id}", response_model=ClienteRead)
 def get_one(cliente_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get one."""
     crud = ClienteCRUD(db)
     cliente = crud.obtener_cliente(cliente_id)
     if not cliente:
@@ -46,6 +49,7 @@ def get_one(cliente_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{cliente_id}", response_model=ClienteRead)
 def update(cliente_id: UUID, cliente: ClienteUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = ClienteCRUD(db)
     try:
         updated = crud.actualizar_cliente(
@@ -62,6 +66,7 @@ def update(cliente_id: UUID, cliente: ClienteUpdate, db: Session = Depends(get_d
 
 @router.delete("/{cliente_id}")
 def delete(cliente_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = ClienteCRUD(db)
     cliente = crud.obtener_cliente(cliente_id)
     if not cliente:

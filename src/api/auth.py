@@ -74,6 +74,7 @@ async def _parse_login_credentials(request: Request) -> LoginRequest:
 
 @router.post("/login", response_model=TokenResponse)
 async def login(request: Request, db: Session = Depends(get_db)):
+    """Ejecuta login."""
     credentials = await _parse_login_credentials(request)
     crud = UsuarioCRUD(db)
     usuario = crud.autenticar_usuario(credentials.username, credentials.password)
@@ -93,4 +94,5 @@ async def login(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=UsuarioRead)
 def me(current_user=Depends(get_current_active_user)):
+    """Ejecuta me."""
     return current_user

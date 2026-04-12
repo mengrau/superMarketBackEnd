@@ -15,13 +15,16 @@ class ClienteCRUD:
     """Operaciones CRUD para Clientes."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de ClienteCRUD."""
         self.db = db
 
     def _validar_email(self, email: str) -> bool:
+        """Ejecuta validar email en ClienteCRUD."""
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return re.match(pattern, email or "") is not None
 
     def _validar_identificacion(self, identificacion: str) -> bool:
+        """Ejecuta validar identificacion en ClienteCRUD."""
         identificacion = (identificacion or "").strip()
         return len(identificacion) >= 5
 

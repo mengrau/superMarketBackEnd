@@ -41,4 +41,5 @@ class Sucursal(Base):
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 
     def __repr__(self):
+        """Ejecuta repr en Sucursal."""
         return f"<Sucursal {self.nombre}>"

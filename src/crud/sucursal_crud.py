@@ -14,6 +14,7 @@ class SucursalCRUD:
     """Operaciones CRUD para Sucursales."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de SucursalCRUD."""
         self.db = db
 
     def crear_sucursal(

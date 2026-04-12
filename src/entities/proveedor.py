@@ -48,4 +48,5 @@ class Proveedor(Base):
     )
 
     def __repr__(self):
+        """Ejecuta repr en Proveedor."""
         return f"<Proveedor {self.nombre} ({self.nit})>"
