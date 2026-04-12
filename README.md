@@ -1,5 +1,7 @@
 # SuperMarket BackEnd
 
+Video de ejecucion: (https://youtu.be/lyjjxo9FWSE)
+
 Backend de gestión de supermercado construido con FastAPI, SQLAlchemy y PostgreSQL.
 
 Incluye:
