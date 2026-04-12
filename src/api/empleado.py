@@ -15,6 +15,7 @@ router = APIRouter()
 
 @router.post("/", response_model=EmpleadoRead, status_code=201)
 def create(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = EmpleadoCRUD(db)
     try:
         return crud.crear_empleado(
@@ -37,12 +38,14 @@ def create(empleado: EmpleadoCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[EmpleadoRead])
 def get_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta get all."""
     crud = EmpleadoCRUD(db)
     return crud.obtener_empleados(skip=skip, limit=limit)
 
 
 @router.get("/{empleado_id}", response_model=EmpleadoRead)
 def get_one(empleado_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get one."""
     crud = EmpleadoCRUD(db)
     empleado = crud.obtener_empleado(empleado_id)
     if not empleado:
@@ -52,6 +55,7 @@ def get_one(empleado_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{empleado_id}", response_model=EmpleadoRead)
 def update(empleado_id: UUID, empleado: EmpleadoUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = EmpleadoCRUD(db)
     try:
         updated = crud.actualizar_empleado(
@@ -66,6 +70,7 @@ def update(empleado_id: UUID, empleado: EmpleadoUpdate, db: Session = Depends(ge
 
 @router.delete("/{empleado_id}", response_model=EmpleadoRead)
 def delete(empleado_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = EmpleadoCRUD(db)
     empleado = crud.obtener_empleado(empleado_id)
     if not empleado:

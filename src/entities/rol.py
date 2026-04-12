@@ -36,4 +36,5 @@ class Rol(Base):
     usuarios = relationship("Usuario", back_populates="rol")
 
     def __repr__(self):
+        """Ejecuta repr en Rol."""
         return f"<Rol {self.nombre}>"

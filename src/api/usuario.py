@@ -13,6 +13,7 @@ router = APIRouter()
 
 @router.post("/", response_model=UsuarioRead, status_code=201)
 def create(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = UsuarioCRUD(db)
     total_usuarios = db.query(Usuario).count()
     id_usuario_creacion = None
@@ -34,12 +35,14 @@ def create(usuario: UsuarioCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[UsuarioRead])
 def list_all(db: Session = Depends(get_db)):
+    """Ejecuta list all."""
     crud = UsuarioCRUD(db)
     return crud.obtener_usuarios()
 
 
 @router.get("/{usuario_id}", response_model=UsuarioRead)
 def get_by_id(usuario_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get by id."""
     crud = UsuarioCRUD(db)
     usuario = crud.obtener_usuario(usuario_id)
     if not usuario:
@@ -49,6 +52,7 @@ def get_by_id(usuario_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{usuario_id}", response_model=UsuarioRead)
 def update(usuario_id: UUID, datos: UsuarioUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = UsuarioCRUD(db)
     try:
         updated = crud.actualizar_usuario(
@@ -63,6 +67,7 @@ def update(usuario_id: UUID, datos: UsuarioUpdate, db: Session = Depends(get_db)
 
 @router.delete("/{usuario_id}", response_model=UsuarioRead)
 def delete(usuario_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = UsuarioCRUD(db)
     usuario = crud.obtener_usuario(usuario_id)
     if not usuario:

@@ -21,6 +21,7 @@ router = APIRouter()
 
 @router.post("/", response_model=CompraProveedorRead, status_code=201)
 def create(compra: CompraProveedorCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = CompraProveedorCRUD(db)
     try:
         nueva_compra = crud.crear_compra(
@@ -42,6 +43,7 @@ def create(compra: CompraProveedorCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[CompraProveedorRead])
 def list_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta list all."""
     crud = CompraProveedorCRUD(db)
     return crud.obtener_compras(skip=skip, limit=limit)
 
@@ -53,6 +55,7 @@ def get_by_proveedor(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
+    """Ejecuta get by proveedor."""
     crud = CompraProveedorCRUD(db)
     return crud.obtener_compras_por_proveedor(
         id_proveedor=proveedor_id, skip=skip, limit=limit
@@ -61,6 +64,7 @@ def get_by_proveedor(
 
 @router.get("/{compra_id}", response_model=CompraProveedorRead)
 def get_one(compra_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get one."""
     crud = CompraProveedorCRUD(db)
     compra = crud.obtener_compra(compra_id)
     if not compra:
@@ -72,6 +76,7 @@ def get_one(compra_id: UUID, db: Session = Depends(get_db)):
 def update(
     compra_id: UUID, datos: CompraProveedorUpdate, db: Session = Depends(get_db)
 ):
+    """Ejecuta update."""
     crud = CompraProveedorCRUD(db)
     try:
         compra = crud.actualizar_compra(
@@ -86,6 +91,7 @@ def update(
 
 @router.patch("/{compra_id}/anular", response_model=CompraProveedorRead)
 def anular(compra_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta anular."""
     crud = CompraProveedorCRUD(db)
     compra = crud.anular_compra(compra_id)
     if not compra:

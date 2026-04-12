@@ -21,6 +21,7 @@ class CompraProveedorCRUD:
     """Operaciones CRUD para ComprasProveedor y sus detalles."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de CompraProveedorCRUD."""
         self.db = db
 
     def _ajustar_inventario(

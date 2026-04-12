@@ -11,6 +11,20 @@ from core.exceptions import AppError
 from core.responses import error_response
 
 
+def _json_safe(value: Any) -> Any:
+    """Convertir valores no serializables (p. ej. bytes) a formato JSON-safe."""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+
+    if isinstance(value, (list, tuple, set)):
+        return [_json_safe(item) for item in value]
+
+    return value
+
+
 def _build_error_payload(
     request: Request,
     message: str,
@@ -21,7 +35,7 @@ def _build_error_payload(
     return error_response(
         code=code,
         message=message,
-        details=details,
+        details=_json_safe(details),
         path=request.url.path,
     )
 
@@ -31,6 +45,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        """Ejecuta app error handler."""
         return JSONResponse(
             status_code=exc.status_code,
             content=_build_error_payload(
@@ -45,6 +60,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def http_exception_handler(
         request: Request, exc: HTTPException
     ) -> JSONResponse:
+        """Ejecuta http exception handler."""
         detail = exc.detail
         message = detail if isinstance(detail, str) else "Error HTTP"
         return JSONResponse(
@@ -62,6 +78,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request,
         exc: RequestValidationError,
     ) -> JSONResponse:
+        """Ejecuta validation exception handler."""
         return JSONResponse(
             status_code=422,
             content=_build_error_payload(
@@ -76,6 +93,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def integrity_error_handler(
         request: Request, exc: IntegrityError
     ) -> JSONResponse:
+        """Ejecuta integrity error handler."""
         return JSONResponse(
             status_code=409,
             content=_build_error_payload(
@@ -88,6 +106,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
+        """Ejecuta value error handler."""
         return JSONResponse(
             status_code=400,
             content=_build_error_payload(
@@ -101,6 +120,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def unhandled_exception_handler(
         request: Request, exc: Exception
     ) -> JSONResponse:
+        """Ejecuta unhandled exception handler."""
         return JSONResponse(
             status_code=500,
             content=_build_error_payload(

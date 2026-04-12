@@ -35,4 +35,5 @@ class TipoProducto(Base):
     productos = relationship("Producto", back_populates="tipo")
 
     def __repr__(self):
+        """Ejecuta repr en TipoProducto."""
         return f"<TipoProducto {self.nombre}>"

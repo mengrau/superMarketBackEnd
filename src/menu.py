@@ -12,14 +12,93 @@ from decimal import Decimal, InvalidOperation
 from typing import Optional
 from uuid import UUID
 
-import http_client
+import requests
+
+
+BASE_URL = os.getenv("HTTP_CLIENT_BASE_URL", "http://localhost:8000")
+
+_CONNECTION_ERROR_MSG = (
+    f"No se puede conectar a la API en {BASE_URL}. "
+    "¿Está corriendo el servidor? Usa la opción 13 del menú para iniciarlo."
+)
+
+
+def _raise_for_status(resp: requests.Response) -> None:
+    """Ejecuta raise for status."""
+    if not resp.ok:
+        try:
+            detail = resp.json().get("detail", resp.text)
+        except Exception:
+            detail = resp.text
+        raise RuntimeError(detail)
+
+
+class _HTTPClient:
+    """Cliente HTTP simple para consumir la API desde el menú."""
+
+    @staticmethod
+    def get(path: str, params: dict = None):
+        """Ejecuta get en _HTTPClient."""
+        try:
+            resp = requests.get(f"{BASE_URL}{path}", params=params, timeout=10)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(_CONNECTION_ERROR_MSG)
+        _raise_for_status(resp)
+        return resp.json()
+
+    @staticmethod
+    def post(path: str, body: dict):
+        """Ejecuta post en _HTTPClient."""
+        try:
+            resp = requests.post(f"{BASE_URL}{path}", json=body, timeout=10)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(_CONNECTION_ERROR_MSG)
+        _raise_for_status(resp)
+        return resp.json()
+
+    @staticmethod
+    def put(path: str, body: dict):
+        """Ejecuta put en _HTTPClient."""
+        try:
+            resp = requests.put(f"{BASE_URL}{path}", json=body, timeout=10)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(_CONNECTION_ERROR_MSG)
+        _raise_for_status(resp)
+        return resp.json()
+
+    @staticmethod
+    def patch(path: str, body: dict = None, params: dict = None):
+        """Ejecuta patch en _HTTPClient."""
+        try:
+            resp = requests.patch(
+                f"{BASE_URL}{path}", json=body, params=params, timeout=10
+            )
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(_CONNECTION_ERROR_MSG)
+        _raise_for_status(resp)
+        return resp.json()
+
+    @staticmethod
+    def delete(path: str):
+        """Ejecuta delete en _HTTPClient."""
+        try:
+            resp = requests.delete(f"{BASE_URL}{path}", timeout=10)
+        except requests.exceptions.ConnectionError:
+            raise RuntimeError(_CONNECTION_ERROR_MSG)
+        _raise_for_status(resp)
+        return resp.json()
+
+
+http_client = _HTTPClient()
 
 
 def limpiar_pantalla():
+    """Ejecuta limpiar pantalla."""
     os.system("cls" if os.name == "nt" else "clear")
 
 
 def pausar():
+    """Ejecuta pausar."""
     input("\nPresiona Enter para continuar...")
 
 
@@ -84,6 +163,9 @@ def menu_clientes():
 
             elif opcion == "2":
                 nombre = input("  Nombre completo: ").strip()
+                tipo_identificacion = input(
+                    "  Tipo identificación (CC/NIT/CE): "
+                ).strip()
                 identificacion = input("  Número de identificación: ").strip()
                 email = input("  Email (opcional): ").strip() or None
                 telefono = input("  Teléfono (opcional): ").strip() or None
@@ -92,6 +174,7 @@ def menu_clientes():
                     "/clientes/",
                     {
                         "nombre": nombre,
+                        "tipo_identificacion": tipo_identificacion,
                         "identificacion": identificacion,
                         "email": email,
                         "telefono": telefono,

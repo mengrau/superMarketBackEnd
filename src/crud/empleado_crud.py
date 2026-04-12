@@ -16,6 +16,7 @@ class EmpleadoCRUD:
     """Operaciones CRUD para Empleados."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de EmpleadoCRUD."""
         self.db = db
 
     def crear_empleado(
@@ -33,6 +34,7 @@ class EmpleadoCRUD:
         estado: bool = True,
         id_usuario_creacion: Optional[UUID] = None,
     ) -> Empleado:
+        """Ejecuta crear empleado en EmpleadoCRUD."""
         if not username or not username.strip():
             raise ValueError("El username es obligatorio")
         if len(username.strip()) > 50:
@@ -73,9 +75,11 @@ class EmpleadoCRUD:
         return empleado
 
     def obtener_empleado(self, empleado_id: UUID) -> Optional[Empleado]:
+        """Ejecuta obtener empleado en EmpleadoCRUD."""
         return self.db.get(Empleado, empleado_id)
 
     def obtener_empleado_por_username(self, username: str) -> Optional[Empleado]:
+        """Ejecuta obtener empleado por username en EmpleadoCRUD."""
         return (
             self.db.query(Empleado)
             .filter(Empleado.username.ilike((username or "").strip()))
@@ -85,6 +89,7 @@ class EmpleadoCRUD:
     def obtener_empleado_por_identificacion(
         self, identificacion: str
     ) -> Optional[Empleado]:
+        """Ejecuta obtener empleado por identificacion en EmpleadoCRUD."""
         return (
             self.db.query(Empleado)
             .filter(Empleado.identificacion == (identificacion or "").strip())
@@ -94,6 +99,7 @@ class EmpleadoCRUD:
     def obtener_empleados(
         self, skip: int = 0, limit: int = 100, solo_activos: bool = True
     ) -> List[Empleado]:
+        """Ejecuta obtener empleados en EmpleadoCRUD."""
         query = self.db.query(Empleado)
         if solo_activos:
             query = query.filter(Empleado.estado)
@@ -105,6 +111,7 @@ class EmpleadoCRUD:
         id_usuario_edicion: Optional[UUID] = None,
         **kwargs,
     ) -> Optional[Empleado]:
+        """Ejecuta actualizar empleado en EmpleadoCRUD."""
         empleado = self.obtener_empleado(empleado_id)
         if not empleado:
             return None
@@ -153,6 +160,7 @@ class EmpleadoCRUD:
     def eliminar_empleado(
         self, empleado_id: UUID, id_usuario_edicion: Optional[UUID] = None
     ) -> bool:
+        """Ejecuta eliminar empleado en EmpleadoCRUD."""
         empleado = self.obtener_empleado(empleado_id)
         if not empleado:
             return False

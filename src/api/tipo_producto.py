@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.post("/", response_model=TipoProductoRead, status_code=201)
 def create(tipo: TipoProductoCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = TipoProductoCRUD(db)
     try:
         return crud.crear_tipo_producto(
@@ -26,12 +27,14 @@ def create(tipo: TipoProductoCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[TipoProductoRead])
 def list_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta list all."""
     crud = TipoProductoCRUD(db)
     return crud.obtener_tipos_producto(skip=skip, limit=limit)
 
 
 @router.get("/{tipo_id}", response_model=TipoProductoRead)
 def get_by_id(tipo_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get by id."""
     crud = TipoProductoCRUD(db)
     tipo = crud.obtener_tipo_producto(tipo_id)
     if not tipo:
@@ -41,6 +44,7 @@ def get_by_id(tipo_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{tipo_id}", response_model=TipoProductoRead)
 def update(tipo_id: UUID, datos: TipoProductoUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = TipoProductoCRUD(db)
     try:
         tipo = crud.actualizar_tipo_producto(
@@ -58,6 +62,7 @@ def update(tipo_id: UUID, datos: TipoProductoUpdate, db: Session = Depends(get_d
 
 @router.delete("/{tipo_id}", response_model=TipoProductoRead)
 def delete(tipo_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = TipoProductoCRUD(db)
     tipo = crud.obtener_tipo_producto(tipo_id)
     if not tipo:
