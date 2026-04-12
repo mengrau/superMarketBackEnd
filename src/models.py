@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 def now_utc() -> datetime:
+    """Ejecuta now utc."""
     return datetime.now(timezone.utc)
 
 
@@ -35,10 +36,14 @@ class UsuarioBase(BaseModel):
 
 
 class UsuarioCreate(UsuarioBase):
+    """Define la clase UsuarioCreate."""
+
     password: str = Field(..., min_length=6)
 
 
 class UsuarioUpdate(BaseModel):
+    """Define la clase UsuarioUpdate."""
+
     username: Optional[str]
     password: Optional[str]
     id_rol: Optional[UUID]
@@ -46,17 +51,23 @@ class UsuarioUpdate(BaseModel):
 
 
 class UsuarioRead(UsuarioBase, AuditBase):
+    """Define la clase UsuarioRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class LoginRequest(BaseModel):
+    """Define la clase LoginRequest."""
+
     username: str
     password: str
 
 
 class TokenResponse(BaseModel):
+    """Define la clase TokenResponse."""
+
     access_token: str
     token_type: str = "bearer"
     expires_in: int
@@ -66,6 +77,7 @@ class ClienteBase(BaseModel):
     """Campos base del Cliente."""
 
     nombre: str = Field(..., max_length=120)
+    tipo_identificacion: str = Field(..., max_length=5)
     identificacion: str = Field(..., max_length=50)
     email: Optional[str] = Field(None, max_length=120)
     telefono: Optional[str] = Field(None, max_length=20)
@@ -74,19 +86,27 @@ class ClienteBase(BaseModel):
 
 
 class ClienteCreate(ClienteBase):
-    pass
+    """Define la clase ClienteCreate."""
+
+    id_usuario_creacion: Optional[UUID] = None
 
 
 class ClienteUpdate(BaseModel):
-    nombre: Optional[str]
-    identificacion: Optional[str]
-    email: Optional[str]
-    telefono: Optional[str]
-    direccion: Optional[str]
-    estado: Optional[bool]
+    """Define la clase ClienteUpdate."""
+
+    nombre: Optional[str] = Field(None, max_length=120)
+    tipo_identificacion: Optional[str] = Field(None, max_length=5)
+    identificacion: Optional[str] = Field(None, max_length=50)
+    email: Optional[str] = Field(None, max_length=120)
+    telefono: Optional[str] = Field(None, max_length=20)
+    direccion: Optional[str] = Field(None, max_length=200)
+    estado: Optional[bool] = None
+    id_usuario_edicion: Optional[UUID] = None
 
 
 class ClienteRead(ClienteBase, AuditBase):
+    """Define la clase ClienteRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
@@ -105,6 +125,8 @@ class EmpleadoBase(BaseModel):
 
 
 class EmpleadoCreate(EmpleadoBase):
+    """Define la clase EmpleadoCreate."""
+
     username: str = Field(..., max_length=50)
     password: str = Field(..., min_length=6)
     id_rol: UUID
@@ -113,6 +135,8 @@ class EmpleadoCreate(EmpleadoBase):
 
 
 class EmpleadoUpdate(BaseModel):
+    """Define la clase EmpleadoUpdate."""
+
     username: Optional[str] = Field(None, max_length=50)
     password: Optional[str] = Field(None, min_length=6)
     id_rol: Optional[UUID] = None
@@ -127,6 +151,8 @@ class EmpleadoUpdate(BaseModel):
 
 
 class EmpleadoRead(EmpleadoBase, UsuarioRead):
+    """Define la clase EmpleadoRead."""
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -141,10 +167,14 @@ class SucursalBase(BaseModel):
 
 
 class SucursalCreate(SucursalBase):
+    """Define la clase SucursalCreate."""
+
     pass
 
 
 class SucursalUpdate(BaseModel):
+    """Define la clase SucursalUpdate."""
+
     nombre: Optional[str]
     direccion: Optional[str]
     gerente: Optional[str]
@@ -153,6 +183,8 @@ class SucursalUpdate(BaseModel):
 
 
 class SucursalRead(SucursalBase, AuditBase):
+    """Define la clase SucursalRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
@@ -170,10 +202,14 @@ class ProveedorBase(BaseModel):
 
 
 class ProveedorCreate(ProveedorBase):
+    """Define la clase ProveedorCreate."""
+
     pass
 
 
 class ProveedorUpdate(BaseModel):
+    """Define la clase ProveedorUpdate."""
+
     nombre: Optional[str]
     nit: Optional[str]
     telefono: Optional[str]
@@ -183,6 +219,8 @@ class ProveedorUpdate(BaseModel):
 
 
 class ProveedorRead(ProveedorBase, AuditBase):
+    """Define la clase ProveedorRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
@@ -197,16 +235,22 @@ class TipoProductoBase(BaseModel):
 
 
 class TipoProductoCreate(TipoProductoBase):
+    """Define la clase TipoProductoCreate."""
+
     pass
 
 
 class TipoProductoUpdate(BaseModel):
+    """Define la clase TipoProductoUpdate."""
+
     nombre: Optional[str]
     descripcion: Optional[str]
     estado: Optional[bool]
 
 
 class TipoProductoRead(TipoProductoBase):
+    """Define la clase TipoProductoRead."""
+
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)
@@ -227,10 +271,14 @@ class ProductoBase(BaseModel):
 
 
 class ProductoCreate(ProductoBase):
+    """Define la clase ProductoCreate."""
+
     pass
 
 
 class ProductoUpdate(BaseModel):
+    """Define la clase ProductoUpdate."""
+
     nombre: Optional[str]
     codigo_barras: Optional[str]
     precio_venta: Optional[Decimal]
@@ -241,6 +289,8 @@ class ProductoUpdate(BaseModel):
 
 
 class ProductoRead(ProductoBase, AuditBase):
+    """Define la clase ProductoRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
@@ -258,10 +308,14 @@ class InventarioBase(BaseModel):
 
 
 class InventarioCreate(InventarioBase):
+    """Define la clase InventarioCreate."""
+
     pass
 
 
 class InventarioUpdate(BaseModel):
+    """Define la clase InventarioUpdate."""
+
     stock_actual: Optional[int]
     stock_minimo: Optional[int]
     ubicacion: Optional[str]
@@ -271,6 +325,8 @@ class InventarioUpdate(BaseModel):
 
 
 class InventarioRead(InventarioBase, AuditBase):
+    """Define la clase InventarioRead."""
+
     id: UUID
 
     model_config = ConfigDict(from_attributes=True)
@@ -287,17 +343,23 @@ class DetalleFacturaBase(BaseModel):
 
 
 class DetalleFacturaCreate(BaseModel):
+    """Define la clase DetalleFacturaCreate."""
+
     cantidad: int = Field(..., gt=0)
     precio_unitario: Decimal = Field(..., gt=0)
     id_producto: UUID
 
 
 class DetalleFacturaUpdate(BaseModel):
+    """Define la clase DetalleFacturaUpdate."""
+
     cantidad: Optional[int]
     precio_unitario: Optional[Decimal]
 
 
 class DetalleFacturaRead(DetalleFacturaBase):
+    """Define la clase DetalleFacturaRead."""
+
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
@@ -317,6 +379,8 @@ class FacturaBase(BaseModel):
 
 
 class FacturaCreate(BaseModel):
+    """Define la clase FacturaCreate."""
+
     metodo_pago: Optional[str]
     id_cliente: UUID
     id_empleado: UUID
@@ -325,11 +389,15 @@ class FacturaCreate(BaseModel):
 
 
 class FacturaUpdate(BaseModel):
+    """Define la clase FacturaUpdate."""
+
     metodo_pago: Optional[str]
     estado: Optional[str]
 
 
 class FacturaRead(FacturaBase, AuditBase):
+    """Define la clase FacturaRead."""
+
     id: UUID
     detalles: List[DetalleFacturaRead] = Field(default_factory=list)
 
@@ -346,17 +414,23 @@ class DetalleCompraBase(BaseModel):
 
 
 class DetalleCompraCreate(BaseModel):
+    """Define la clase DetalleCompraCreate."""
+
     cantidad: int = Field(..., gt=0)
     precio_compra: Decimal = Field(..., gt=0)
     id_producto: UUID
 
 
 class DetalleCompraUpdate(BaseModel):
+    """Define la clase DetalleCompraUpdate."""
+
     cantidad: Optional[int]
     precio_compra: Optional[Decimal]
 
 
 class DetalleCompraRead(DetalleCompraBase):
+    """Define la clase DetalleCompraRead."""
+
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
 
@@ -374,16 +448,22 @@ class CompraProveedorBase(BaseModel):
 
 
 class CompraProveedorCreate(BaseModel):
+    """Define la clase CompraProveedorCreate."""
+
     id_proveedor: UUID
     id_sucursal: Optional[UUID] = None
     detalles: List[DetalleCompraCreate] = Field(default_factory=list)
 
 
 class CompraProveedorUpdate(BaseModel):
+    """Define la clase CompraProveedorUpdate."""
+
     estado: Optional[str]
 
 
 class CompraProveedorRead(CompraProveedorBase, AuditBase):
+    """Define la clase CompraProveedorRead."""
+
     id: UUID
     detalles: List[DetalleCompraRead] = Field(default_factory=list)
 
@@ -400,10 +480,14 @@ class RolBase(BaseModel):
 
 
 class RolCreate(RolBase):
+    """Define la clase RolCreate."""
+
     pass
 
 
 class RolUpdate(BaseModel):
+    """Define la clase RolUpdate."""
+
     nombre: Optional[str]
     descripcion: Optional[str]
     salario: Optional[Decimal]
@@ -411,6 +495,8 @@ class RolUpdate(BaseModel):
 
 
 class RolRead(RolBase):
+    """Define la clase RolRead."""
+
     id: UUID
     fecha_creacion: Optional[datetime] = Field(default_factory=now_utc)
     fecha_actualizacion: Optional[datetime] = Field(default_factory=now_utc)

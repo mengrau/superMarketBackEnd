@@ -12,7 +12,6 @@ from alembic import context
 from core.config import Base
 from core.config import DATABASE_URL
 
-import entities  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
@@ -28,6 +27,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline():
+    """Ejecuta run migrations offline."""
     context.configure(
         url=DATABASE_URL,
         target_metadata=target_metadata,
@@ -39,6 +39,7 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
+    """Ejecuta run migrations online."""
     connectable = engine_from_config(
         config.get_section(config.config_ini_section),
         prefix="sqlalchemy.",

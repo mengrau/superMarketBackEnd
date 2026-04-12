@@ -16,6 +16,7 @@ class InventarioCRUD:
     """Operaciones CRUD para Inventarios."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de InventarioCRUD."""
         self.db = db
 
     def crear_inventario(

@@ -7,10 +7,11 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from main import app  # noqa: E402
+from main import app
 
 
 def test_root_endpoint_ok():
+    """Ejecuta test root endpoint ok."""
     client = TestClient(app)
     response = client.get("/")
 

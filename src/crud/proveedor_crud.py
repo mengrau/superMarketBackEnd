@@ -15,9 +15,11 @@ class ProveedorCRUD:
     """Operaciones CRUD para Proveedores."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de ProveedorCRUD."""
         self.db = db
 
     def _validar_email(self, email: str) -> bool:
+        """Ejecuta validar email en ProveedorCRUD."""
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         return re.match(pattern, email or "") is not None
 

@@ -16,6 +16,7 @@ router = APIRouter()
 
 @router.post("/", response_model=InventarioRead, status_code=201)
 def create(inventario: InventarioCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = InventarioCRUD(db)
     try:
         return crud.crear_inventario(
@@ -36,6 +37,7 @@ def list_all(
     solo_activos: bool = True,
     db: Session = Depends(get_db),
 ):
+    """Ejecuta list all."""
     crud = InventarioCRUD(db)
     return crud.obtener_inventarios(skip=skip, limit=limit, solo_activos=solo_activos)
 
@@ -54,6 +56,7 @@ def get_by_sucursal(
     limit: int = 100,
     db: Session = Depends(get_db),
 ):
+    """Ejecuta get by sucursal."""
     crud = InventarioCRUD(db)
     return crud.obtener_inventarios_por_sucursal(
         id_sucursal=sucursal_id, skip=skip, limit=limit
@@ -62,6 +65,7 @@ def get_by_sucursal(
 
 @router.get("/{inventario_id}", response_model=InventarioRead)
 def get_one(inventario_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get one."""
     crud = InventarioCRUD(db)
     inv = crud.obtener_inventario(inventario_id)
     if not inv:
@@ -71,6 +75,7 @@ def get_one(inventario_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{inventario_id}", response_model=InventarioRead)
 def update(inventario_id: UUID, datos: InventarioUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = InventarioCRUD(db)
     try:
         inv = crud.actualizar_inventario(
@@ -98,6 +103,7 @@ def ajustar_stock(inventario_id: UUID, cantidad: int, db: Session = Depends(get_
 
 @router.delete("/{inventario_id}", response_model=InventarioRead)
 def delete(inventario_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = InventarioCRUD(db)
     inv = crud.obtener_inventario(inventario_id)
     if not inv:

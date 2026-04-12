@@ -18,6 +18,7 @@ class ProductoCRUD:
     """Operaciones CRUD para Productos."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de ProductoCRUD."""
         self.db = db
 
     def crear_producto(
