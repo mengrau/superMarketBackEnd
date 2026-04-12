@@ -52,4 +52,5 @@ class Factura(Base):
     usuario_editor = relationship("Usuario", foreign_keys=[id_usuario_edicion])
 
     def __repr__(self):
+        """Ejecuta repr en Factura."""
         return f"<Factura {self.id} total={self.total}>"

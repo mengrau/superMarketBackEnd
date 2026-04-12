@@ -29,4 +29,5 @@ class Empleado(Usuario):
     __mapper_args__ = {"polymorphic_identity": "empleado"}
 
     def __repr__(self):
+        """Ejecuta repr en Empleado."""
         return f"<Empleado {self.nombre}>"

@@ -19,7 +19,7 @@ depends_on = None
 
 
 def upgrade():
-    # ── clientes.identificacion ───────────────────────────────────────────
+    """Ejecuta upgrade."""
     op.drop_constraint("clientes_identificacion_key", "clientes", type_="unique")
     op.execute(
         """
@@ -29,7 +29,6 @@ def upgrade():
         """
     )
 
-    # ── proveedores.nit ───────────────────────────────────────────────────
     op.drop_constraint("proveedores_nit_key", "proveedores", type_="unique")
     op.execute(
         """
@@ -39,7 +38,6 @@ def upgrade():
         """
     )
 
-    # ── productos.codigo_barras ───────────────────────────────────────────
     op.drop_constraint("productos_codigo_barras_key", "productos", type_="unique")
     op.execute(
         """
@@ -49,7 +47,6 @@ def upgrade():
         """
     )
 
-    # ── usuarios.username ─────────────────────────────────────────────────
     op.drop_constraint("usuarios_username_key", "usuarios", type_="unique")
     op.execute(
         """
@@ -61,6 +58,7 @@ def upgrade():
 
 
 def downgrade():
+    """Ejecuta downgrade."""
     op.execute("DROP INDEX IF EXISTS uq_clientes_identificacion_activo")
     op.create_unique_constraint(
         "clientes_identificacion_key", "clientes", ["identificacion"]

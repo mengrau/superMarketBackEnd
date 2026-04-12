@@ -18,6 +18,7 @@ class UsuarioCRUD:
     """Operaciones CRUD y autenticacion para Usuarios."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de UsuarioCRUD."""
         self.db = db
 
     def crear_usuario(

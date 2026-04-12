@@ -33,4 +33,5 @@ class DetalleFactura(Base):
     producto = relationship("Producto", back_populates="detalle_facturas")
 
     def __repr__(self):
+        """Ejecuta repr en DetalleFactura."""
         return f"<DetalleFactura {self.id} factura={self.id_factura}>"

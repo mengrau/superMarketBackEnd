@@ -18,6 +18,7 @@ class BadRequestError(AppError):
     """Error de solicitud inválida (HTTP 400)."""
 
     def __init__(self, message: str, details: Any = None):
+        """Inicializa una instancia de BadRequestError."""
         super().__init__(
             message=message,
             status_code=400,
@@ -30,6 +31,7 @@ class NotFoundError(AppError):
     """Error cuando un recurso no existe (HTTP 404)."""
 
     def __init__(self, message: str, details: Any = None):
+        """Inicializa una instancia de NotFoundError."""
         super().__init__(
             message=message,
             status_code=404,
@@ -42,6 +44,7 @@ class ConflictError(AppError):
     """Error por conflicto de datos o negocio (HTTP 409)."""
 
     def __init__(self, message: str, details: Any = None):
+        """Inicializa una instancia de ConflictError."""
         super().__init__(
             message=message,
             status_code=409,
@@ -54,6 +57,7 @@ class UnauthorizedError(AppError):
     """Error de autenticación o autorización (HTTP 401)."""
 
     def __init__(self, message: str = "No autenticado", details: Any = None):
+        """Inicializa una instancia de UnauthorizedError."""
         super().__init__(
             message=message,
             status_code=401,
@@ -62,5 +66,4 @@ class UnauthorizedError(AppError):
         )
 
 
-# Alias de compatibilidad para nomenclatura previa.
 AppException = AppError

@@ -14,6 +14,7 @@ router = APIRouter()
 
 @router.post("/", response_model=SucursalRead, status_code=201)
 def create(sucursal: SucursalCreate, db: Session = Depends(get_db)):
+    """Ejecuta create."""
     crud = SucursalCRUD(db)
     try:
         return crud.crear_sucursal(
@@ -29,12 +30,14 @@ def create(sucursal: SucursalCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=List[SucursalRead])
 def list_all(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    """Ejecuta list all."""
     crud = SucursalCRUD(db)
     return crud.obtener_sucursales(skip=skip, limit=limit)
 
 
 @router.get("/{sucursal_id}", response_model=SucursalRead)
 def get_by_id(sucursal_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta get by id."""
     crud = SucursalCRUD(db)
     sucursal = crud.obtener_sucursal(sucursal_id)
     if not sucursal:
@@ -44,6 +47,7 @@ def get_by_id(sucursal_id: UUID, db: Session = Depends(get_db)):
 
 @router.put("/{sucursal_id}", response_model=SucursalRead)
 def update(sucursal_id: UUID, datos: SucursalUpdate, db: Session = Depends(get_db)):
+    """Ejecuta update."""
     crud = SucursalCRUD(db)
     try:
         sucursal = crud.actualizar_sucursal(
@@ -60,6 +64,7 @@ def update(sucursal_id: UUID, datos: SucursalUpdate, db: Session = Depends(get_d
 
 @router.delete("/{sucursal_id}", response_model=SucursalRead)
 def delete(sucursal_id: UUID, db: Session = Depends(get_db)):
+    """Ejecuta delete."""
     crud = SucursalCRUD(db)
     sucursal = crud.obtener_sucursal(sucursal_id)
     if not sucursal:

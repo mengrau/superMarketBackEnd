@@ -58,4 +58,5 @@ class Usuario(Base):
         return verify_password(password, self.password_hash)
 
     def __repr__(self):
+        """Ejecuta repr en Usuario."""
         return f"<Usuario {self.username}>"

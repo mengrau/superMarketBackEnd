@@ -22,6 +22,7 @@ class FacturaCRUD:
     """Operaciones CRUD para Facturas y sus detalles."""
 
     def __init__(self, db: Session):
+        """Inicializa una instancia de FacturaCRUD."""
         self.db = db
 
     def crear_factura(
