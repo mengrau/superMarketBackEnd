@@ -11,6 +11,20 @@ from core.exceptions import AppError
 from core.responses import error_response
 
 
+def _json_safe(value: Any) -> Any:
+    """Convertir valores no serializables (p. ej. bytes) a formato JSON-safe."""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+
+    if isinstance(value, (list, tuple, set)):
+        return [_json_safe(item) for item in value]
+
+    return value
+
+
 def _build_error_payload(
     request: Request,
     message: str,
@@ -21,7 +35,7 @@ def _build_error_payload(
     return error_response(
         code=code,
         message=message,
-        details=details,
+        details=_json_safe(details),
         path=request.url.path,
     )
 

@@ -2,7 +2,8 @@
 
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
 from core.auth import (
@@ -18,8 +19,62 @@ from models import LoginRequest, TokenResponse, UsuarioRead
 router = APIRouter()
 
 
+async def _parse_login_credentials(request: Request) -> LoginRequest:
+    """Aceptar credenciales desde JSON o formulario OAuth2."""
+    content_type = request.headers.get("content-type", "").lower()
+
+    if "application/json" in content_type:
+        try:
+            payload = await request.json()
+            return LoginRequest.model_validate(payload)
+        except ValidationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=exc.errors(),
+            ) from exc
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="JSON inválido en la solicitud",
+            ) from exc
+
+    if (
+        "application/x-www-form-urlencoded" in content_type
+        or "multipart/form-data" in content_type
+    ):
+        form = await request.form()
+        grant_type = form.get("grant_type")
+        if grant_type not in (None, "", "password"):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="grant_type debe ser 'password'",
+            )
+
+        try:
+            return LoginRequest.model_validate(
+                {
+                    "username": form.get("username"),
+                    "password": form.get("password"),
+                }
+            )
+        except ValidationError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=exc.errors(),
+            ) from exc
+
+    raise HTTPException(
+        status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+        detail=(
+            "Content-Type no soportado. Use application/json "
+            "o application/x-www-form-urlencoded"
+        ),
+    )
+
+
 @router.post("/login", response_model=TokenResponse)
-def login(credentials: LoginRequest, db: Session = Depends(get_db)):
+async def login(request: Request, db: Session = Depends(get_db)):
+    credentials = await _parse_login_credentials(request)
     crud = UsuarioCRUD(db)
     usuario = crud.autenticar_usuario(credentials.username, credentials.password)
     if not usuario:
