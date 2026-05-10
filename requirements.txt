@@ -14,13 +14,13 @@ email-validator==2.3.0
 bcrypt>=4.1.0  # Secure password hashing
 
 # Additional Utilities
-python-dotenv==1.1.1  # Environment variables
+python-dotenv==1.2.2  # Environment variables
 typing-extensions==4.15.0  # Type hints support
 
 # APIs utilities
 fastapi==0.135.2
 uvicorn[standard]==0.38.0
-python-multipart==0.0.22
+python-multipart==0.0.27
 requests==2.33.0
 httpx==0.28.1
 PyJWT==2.12.0

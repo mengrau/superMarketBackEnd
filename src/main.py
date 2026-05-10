@@ -32,7 +32,6 @@ except ImportError:
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -47,10 +46,10 @@ def _get_cors_origins() -> list[str]:
     """Obtener la lista de orígenes permitidos para CORS desde variables de entorno."""
     raw_origins = os.getenv(
         "CORS_ALLOW_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000",
+        "http://localhost:4200,http://127.0.0.1:4200",
     )
     origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-    return origins or ["http://localhost:3000"]
+    return origins or ["http://localhost:4200"]
 
 
 def _run_optional_seeders() -> None:
@@ -94,7 +93,7 @@ cors_allow_credentials = _as_bool(os.getenv("CORS_ALLOW_CREDENTIALS"), True)
 cors_origins = _get_cors_origins()
 
 if cors_allow_credentials and "*" in cors_origins:
-    cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    cors_origins = ["http://localhost:4200", "http://127.0.0.1:4200"]
 
 app.add_middleware(
     CORSMiddleware,
