@@ -353,8 +353,9 @@ class DetalleFacturaCreate(BaseModel):
 class DetalleFacturaUpdate(BaseModel):
     """Define la clase DetalleFacturaUpdate."""
 
-    cantidad: Optional[int]
-    precio_unitario: Optional[Decimal]
+    cantidad: Optional[int] = Field(None, gt=0)
+    precio_unitario: Optional[Decimal] = Field(None, gt=0)
+    id_producto: Optional[UUID] = None
 
 
 class DetalleFacturaRead(DetalleFacturaBase):
@@ -424,8 +425,9 @@ class DetalleCompraCreate(BaseModel):
 class DetalleCompraUpdate(BaseModel):
     """Define la clase DetalleCompraUpdate."""
 
-    cantidad: Optional[int]
-    precio_compra: Optional[Decimal]
+    cantidad: Optional[int] = Field(None, gt=0)
+    precio_compra: Optional[Decimal] = Field(None, gt=0)
+    id_producto: Optional[UUID] = None
 
 
 class DetalleCompraRead(DetalleCompraBase):

@@ -12,6 +12,7 @@ from core.config import get_db
 from models import (
     DetalleFacturaCreate,
     DetalleFacturaRead,
+    DetalleFacturaUpdate,
     FacturaCreate,
     FacturaRead,
     FacturaUpdate,
@@ -150,6 +151,23 @@ def get_detalle(detalle_id: UUID, db: Session = Depends(get_db)):
     if not detalle:
         raise NotFoundError("Detalle no encontrado")
     return detalle
+
+
+@router.put("/detalles/{detalle_id}", response_model=DetalleFacturaRead)
+def update_detalle(
+    detalle_id: UUID, datos: DetalleFacturaUpdate, db: Session = Depends(get_db)
+):
+    """Actualiza un detalle de factura y recalcula el total."""
+    crud = FacturaCRUD(db)
+    try:
+        detalle = crud.actualizar_detalle(
+            detalle_id, **datos.model_dump(exclude_unset=True)
+        )
+        if not detalle:
+            raise NotFoundError("Detalle no encontrado")
+        return detalle
+    except ValueError as e:
+        raise BadRequestError(str(e))
 
 
 @router.delete("/detalles/{detalle_id}")
