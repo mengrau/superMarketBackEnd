@@ -227,6 +227,81 @@ class CompraProveedorCRUD:
         self.db.refresh(detalle)
         return detalle
 
+    def actualizar_detalle(
+        self,
+        detalle_id: UUID,
+        id_usuario_edicion: Optional[UUID] = None,
+        **kwargs,
+    ) -> Optional[DetalleCompra]:
+        """
+        Actualiza un item de compra, recalcula total y ajusta stock si aplica.
+        Campos soportados: id_producto, cantidad, precio_compra.
+        """
+        detalle = self.obtener_detalle(detalle_id)
+        if not detalle:
+            return None
+
+        producto_anterior = detalle.id_producto
+        cantidad_anterior = detalle.cantidad
+        precio_anterior = detalle.precio_compra
+
+        id_producto = (
+            kwargs["id_producto"]
+            if kwargs.get("id_producto") is not None
+            else detalle.id_producto
+        )
+        cantidad = (
+            kwargs["cantidad"] if kwargs.get("cantidad") is not None else detalle.cantidad
+        )
+        precio_compra = (
+            kwargs["precio_compra"]
+            if kwargs.get("precio_compra") is not None
+            else detalle.precio_compra
+        )
+
+        if cantidad < 1:
+            raise ValueError("La cantidad debe ser mayor a 0")
+        if Decimal(str(precio_compra)) <= 0:
+            raise ValueError("El precio de compra debe ser mayor a 0")
+        if self.db.get(Producto, id_producto) is None:
+            raise ValueError("El producto especificado no existe")
+
+        subtotal_anterior = Decimal(str(precio_anterior or 0)) * cantidad_anterior
+        subtotal_nuevo = Decimal(str(precio_compra)) * cantidad
+
+        detalle.id_producto = id_producto
+        detalle.cantidad = cantidad
+        detalle.precio_compra = precio_compra
+
+        compra = self.obtener_compra(detalle.id_compra)
+        if compra:
+            compra.total_compra = max(
+                Decimal("0"),
+                Decimal(str(compra.total_compra or 0))
+                - subtotal_anterior
+                + subtotal_nuevo,
+            )
+            if compra.estado == "recibida" and compra.id_sucursal:
+                if producto_anterior == id_producto:
+                    delta_cantidad = cantidad - cantidad_anterior
+                    if delta_cantidad:
+                        self._ajustar_inventario(
+                            id_producto, compra.id_sucursal, delta_cantidad
+                        )
+                else:
+                    self._ajustar_inventario(
+                        producto_anterior, compra.id_sucursal, -cantidad_anterior
+                    )
+                    self._ajustar_inventario(
+                        id_producto, compra.id_sucursal, cantidad
+                    )
+            if id_usuario_edicion:
+                compra.id_usuario_edicion = id_usuario_edicion
+
+        self.db.commit()
+        self.db.refresh(detalle)
+        return detalle
+
     def obtener_detalle(self, detalle_id: UUID) -> Optional[DetalleCompra]:
         """Obtiene un detalle de compra por su UUID."""
         return self.db.get(DetalleCompra, detalle_id)
@@ -236,6 +311,7 @@ class CompraProveedorCRUD:
         return (
             self.db.query(DetalleCompra)
             .filter(DetalleCompra.id_compra == id_compra)
+            .order_by(DetalleCompra.fecha_creacion.asc())
             .all()
         )
 

@@ -204,6 +204,62 @@ class FacturaCRUD:
         self.db.refresh(detalle)
         return detalle
 
+    def actualizar_detalle(
+        self,
+        detalle_id: UUID,
+        id_usuario_edicion: Optional[UUID] = None,
+        **kwargs,
+    ) -> Optional[DetalleFactura]:
+        """
+        Actualiza un item de factura y recalcula el total con la diferencia.
+        Campos soportados: id_producto, cantidad, precio_unitario.
+        """
+        detalle = self.obtener_detalle(detalle_id)
+        if not detalle:
+            return None
+
+        id_producto = (
+            kwargs["id_producto"]
+            if kwargs.get("id_producto") is not None
+            else detalle.id_producto
+        )
+        cantidad = (
+            kwargs["cantidad"] if kwargs.get("cantidad") is not None else detalle.cantidad
+        )
+        precio_unitario = (
+            kwargs["precio_unitario"]
+            if kwargs.get("precio_unitario") is not None
+            else detalle.precio_unitario
+        )
+
+        if cantidad < 1:
+            raise ValueError("La cantidad debe ser mayor a 0")
+        if Decimal(str(precio_unitario)) <= 0:
+            raise ValueError("El precio unitario debe ser mayor a 0")
+        if self.db.get(Producto, id_producto) is None:
+            raise ValueError("El producto especificado no existe")
+
+        subtotal_anterior = Decimal(str(detalle.subtotal or 0))
+        subtotal_nuevo = Decimal(str(precio_unitario)) * cantidad
+
+        detalle.id_producto = id_producto
+        detalle.cantidad = cantidad
+        detalle.precio_unitario = precio_unitario
+        detalle.subtotal = subtotal_nuevo
+
+        factura = self.obtener_factura(detalle.id_factura)
+        if factura:
+            factura.total = max(
+                Decimal("0"),
+                Decimal(str(factura.total or 0)) - subtotal_anterior + subtotal_nuevo,
+            )
+            if id_usuario_edicion:
+                factura.id_usuario_edicion = id_usuario_edicion
+
+        self.db.commit()
+        self.db.refresh(detalle)
+        return detalle
+
     def obtener_detalle(self, detalle_id: UUID) -> Optional[DetalleFactura]:
         """Obtiene un detalle de factura por su UUID."""
         return self.db.get(DetalleFactura, detalle_id)
@@ -213,6 +269,7 @@ class FacturaCRUD:
         return (
             self.db.query(DetalleFactura)
             .filter(DetalleFactura.id_factura == id_factura)
+            .order_by(DetalleFactura.fecha_creacion.asc())
             .all()
         )
 

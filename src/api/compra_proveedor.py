@@ -14,6 +14,7 @@ from models import (
     CompraProveedorUpdate,
     DetalleCompraCreate,
     DetalleCompraRead,
+    DetalleCompraUpdate,
 )
 
 router = APIRouter()
@@ -133,6 +134,23 @@ def get_detalle(detalle_id: UUID, db: Session = Depends(get_db)):
     if not detalle:
         raise HTTPException(status_code=404, detail="Detalle no encontrado")
     return detalle
+
+
+@router.put("/detalles/{detalle_id}", response_model=DetalleCompraRead)
+def update_detalle(
+    detalle_id: UUID, datos: DetalleCompraUpdate, db: Session = Depends(get_db)
+):
+    """Actualiza un detalle de compra y recalcula total/stock."""
+    crud = CompraProveedorCRUD(db)
+    try:
+        detalle = crud.actualizar_detalle(
+            detalle_id, **datos.model_dump(exclude_unset=True)
+        )
+        if not detalle:
+            raise HTTPException(status_code=404, detail="Detalle no encontrado")
+        return detalle
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.delete("/detalles/{detalle_id}")
