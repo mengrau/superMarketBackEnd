@@ -251,7 +251,9 @@ class CompraProveedorCRUD:
             else detalle.id_producto
         )
         cantidad = (
-            kwargs["cantidad"] if kwargs.get("cantidad") is not None else detalle.cantidad
+            kwargs["cantidad"]
+            if kwargs.get("cantidad") is not None
+            else detalle.cantidad
         )
         precio_compra = (
             kwargs["precio_compra"]
@@ -292,9 +294,7 @@ class CompraProveedorCRUD:
                     self._ajustar_inventario(
                         producto_anterior, compra.id_sucursal, -cantidad_anterior
                     )
-                    self._ajustar_inventario(
-                        id_producto, compra.id_sucursal, cantidad
-                    )
+                    self._ajustar_inventario(id_producto, compra.id_sucursal, cantidad)
             if id_usuario_edicion:
                 compra.id_usuario_edicion = id_usuario_edicion
 
