@@ -10,10 +10,12 @@ Incluye:
 - Seeders idempotentes para entorno inicial.
 - Menú de consola para consumir la API.
 - Pipeline de CI/CD con pruebas, lint, auditoría de seguridad y publicación de imagen Docker en GHCR.
+- Despliegue publico en Render y consumo desde el frontend desplegado en GitHub Pages.
 
 ## Tabla de contenido
 
 - [Video demo](#video-demo)
+- [URLs publicas](#urls-publicas)
 - [Visión general](#visión-general)
 - [Arquitectura del proyecto](#arquitectura-del-proyecto)
 - [Estructura de carpetas](#estructura-de-carpetas)
@@ -28,14 +30,22 @@ Incluye:
 - [Ejecución con Docker](#ejecución-con-docker)
 - [Pruebas, lint y seguridad](#pruebas-lint-y-seguridad)
 - [CI/CD](#cicd)
+- [Despliegue en Render](#despliegue-en-render)
 - [Troubleshooting](#troubleshooting)
 - [Buenas prácticas operativas](#buenas-prácticas-operativas)
 
 ## Video demo
 
-[![Ver video demo en YouTube](https://img.youtube.com/vi/lyjjxo9FWSE/hqdefault.jpg)](https://youtu.be/lyjjxo9FWSE)
+[![Ver video demo en YouTube](https://img.youtube.com/vi/toM-GmfHZpo/hqdefault.jpg)](https://youtu.be/toM-GmfHZpo)
 
-Si la vista previa no carga, puedes abrirlo directamente aquí: https://youtu.be/lyjjxo9FWSE
+Si la vista previa no carga, puedes abrirlo directamente aquí: https://youtu.be/toM-GmfHZpo
+
+## URLs publicas
+
+- Backend en produccion: https://supermarketbackend.onrender.com
+- Swagger en produccion: https://supermarketbackend.onrender.com/docs
+- ReDoc en produccion: https://supermarketbackend.onrender.com/redoc
+- Frontend en produccion: https://santi-osp.github.io/superMarketFrontEnd/
 
 ## Visión general
 
@@ -276,7 +286,7 @@ Se recomienda un archivo .env en la raíz.
 | JWT_SECRET_KEY         | No        | dev-only-change-this-secret-at-least-32-bytes | Clave de firma JWT. Debe cambiarse en producción.               |
 | JWT_ALGORITHM          | No        | HS256                                         | Algoritmo de firma JWT.                                         |
 | JWT_EXPIRE_MINUTES     | No        | 60                                            | Minutos de vida del token.                                      |
-| CORS_ALLOW_ORIGINS     | No        | http://localhost:3000,http://127.0.0.1:3000   | Lista de orígenes separados por coma.                           |
+| CORS_ALLOW_ORIGINS     | No        | http://localhost:4200,http://127.0.0.1:4200   | Lista de orígenes separados por coma. En produccion debe incluir https://santi-osp.github.io. |
 | CORS_ALLOW_CREDENTIALS | No        | true                                          | Habilita credenciales en CORS.                                  |
 | RUN_SEEDERS_ON_STARTUP | No        | false                                         | Ejecuta seeders al levantar la API.                             |
 | HTTP_CLIENT_BASE_URL   | No        | http://localhost:8000                         | URL base usada por menu.py.                                     |
@@ -289,10 +299,16 @@ SSL_MODE=disable
 JWT_SECRET_KEY=super-secret-change-me-32chars-min
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=60
-CORS_ALLOW_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ALLOW_ORIGINS=http://localhost:4200,http://127.0.0.1:4200
 CORS_ALLOW_CREDENTIALS=true
 RUN_SEEDERS_ON_STARTUP=false
 HTTP_CLIENT_BASE_URL=http://localhost:8000
+```
+
+Ejemplo para permitir el frontend local y el despliegue en GitHub Pages:
+
+```env
+CORS_ALLOW_ORIGINS=http://localhost:4200,http://127.0.0.1:4200,https://santi-osp.github.io
 ```
 
 ## Instalación y ejecución local
@@ -446,6 +462,37 @@ Acciones:
 - Build de imagen Docker.
 - Login a GHCR.
 - Publicación de imagen en ghcr.io con tags por SHA y rama.
+
+## Despliegue en Render
+
+El backend esta desplegado publicamente en Render:
+
+```text
+https://supermarketbackend.onrender.com
+```
+
+Rutas utiles en produccion:
+
+- API raiz: https://supermarketbackend.onrender.com
+- Swagger: https://supermarketbackend.onrender.com/docs
+- ReDoc: https://supermarketbackend.onrender.com/redoc
+
+Variables que deben estar configuradas en Render:
+
+- DATABASE_URL
+- SSL_MODE=require
+- JWT_SECRET_KEY
+- JWT_ALGORITHM=HS256
+- JWT_EXPIRE_MINUTES=60
+- CORS_ALLOW_ORIGINS=https://santi-osp.github.io
+- CORS_ALLOW_CREDENTIALS=true
+- RUN_SEEDERS_ON_STARTUP=false
+
+El frontend desplegado en GitHub Pages consume esta URL de API:
+
+```text
+https://supermarketbackend.onrender.com
+```
 
 ## Troubleshooting
 
