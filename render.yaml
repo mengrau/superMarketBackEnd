@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: supermarket-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "60"
+      - key: SSL_MODE
+        value: require
+      - key: CORS_ALLOW_ORIGINS
+        sync: false
+      - key: CORS_ALLOW_CREDENTIALS
+        value: "true"
+      - key: RUN_SEEDERS_ON_STARTUP
+        value: "true"
