@@ -224,7 +224,9 @@ class FacturaCRUD:
             else detalle.id_producto
         )
         cantidad = (
-            kwargs["cantidad"] if kwargs.get("cantidad") is not None else detalle.cantidad
+            kwargs["cantidad"]
+            if kwargs.get("cantidad") is not None
+            else detalle.cantidad
         )
         precio_unitario = (
             kwargs["precio_unitario"]
